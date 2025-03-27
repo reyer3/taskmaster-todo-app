@@ -33,6 +33,24 @@ Aplicación de gestión de tareas con autenticación de usuarios desarrollada co
 - Railway (Backend y BD)
 - GitHub Actions (CI/CD)
 
+## 🏗️ Arquitectura
+
+Este proyecto implementa una arquitectura **DDD-Light** (Domain-Driven Design simplificado) que incorpora elementos de la **Arquitectura Limpia** (Clean Architecture) y el principio **Tell, Don't Ask**. Para más detalles, consulta nuestro [ADR-0002](./docs/architecture/decisions/0002-ddd-light-architecture.md).
+
+## 🌿 Flujo de Trabajo Git
+
+Utilizamos **Git Flow** como estrategia de branching. Todas las nuevas características se desarrollan en ramas `feature/*` que parten de `develop`. Para más detalles, consulta nuestro [ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md).
+
+### Ramas principales
+- `main`: Código de producción estable
+- `develop`: Rama de integración para desarrollo
+
+### Proceso para contribuir
+1. Crea una rama desde `develop`: `git checkout -b feature/nombre-caracteristica develop`
+2. Desarrolla y haz commits de tu característica
+3. Envía un Pull Request a `develop`
+4. Después de revisión, se fusionará a `develop`
+
 ## 📋 Requisitos previos
 
 - Node.js >= 18.x
@@ -124,6 +142,13 @@ npm test
 cd frontend
 npm test
 ```
+
+## 📐 Decisiones Arquitectónicas
+
+Mantenemos un registro de decisiones arquitectónicas (ADRs) para documentar las decisiones importantes que afectan la arquitectura del proyecto:
+
+- [ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md) - Uso de Git Flow para el flujo de trabajo de desarrollo
+- [ADR-0002](./docs/architecture/decisions/0002-ddd-light-architecture.md) - Implementación de arquitectura DDD-Light
 
 ## 👥 Equipo de Desarrollo
 
