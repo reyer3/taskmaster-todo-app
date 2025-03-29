@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,33 +9,85 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  password     String
-  name         String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  tasks        Task[]
-
+  id              String            @id @default(uuid())
+  email           String            @unique
+  passwordHash    String
+  name            String
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  tasks           Task[]
+  notifications   Notification[]
+  preferences     NotificationPreference?
   @@map("users")
   @@index([email])
 }
 
 model Task {
-  id           Int       @id @default(autoincrement())
+  id           String    @id @default(uuid())
   title        String
   description  String?
   completed    Boolean   @default(false)
   category     String    @default("personal")
+  priority     String    @default("none")
   dueDate      DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  userId       Int
+  userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@map("tasks")
   @@index([userId])
   @@index([completed])
   @@index([category])
   @@index([dueDate])
+  @@index([priority])
+}
+
+model Notification {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String    // Tipo de evento: task.created, task.completed, etc.
+  title        String
+  message      String
+  isRead       Boolean   @default(false)
+  data         Json?     // Datos adicionales en formato JSON
+  relatedId    String?   // ID relacionado (por ejemplo, ID de tarea)
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime? // Fecha opcional de expiración
+  
+  @@map("notifications")
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Email
+  emailEnabled      Boolean   @default(true)
+  emailTaskCreated  Boolean   @default(true)
+  emailTaskDueSoon  Boolean   @default(true)
+  emailTaskCompleted Boolean   @default(false)
+  
+  // Push/WebSocket
+  pushEnabled       Boolean   @default(true)
+  pushTaskCreated   Boolean   @default(true)
+  pushTaskUpdated   Boolean   @default(true)
+  pushTaskCompleted Boolean   @default(true)
+  pushTaskDeleted   Boolean   @default(false)
+  pushTaskDueSoon   Boolean   @default(true)
+  
+  // Configuración general
+  dailyDigest       Boolean   @default(false)
+  weeklyDigest      Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@map("notification_preferences")
 }

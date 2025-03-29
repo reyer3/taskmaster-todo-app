@@ -4,13 +4,18 @@
  * Este archivo configura la aplicación Express, middleware y rutas
  */
 const express = require('express');
+require('express-async-errors');
 const cors = require('cors');
 const { errorHandler } = require('./infrastructure/middlewares/error.middleware');
 const { requestLogger } = require('./infrastructure/middlewares/logger.middleware');
+const { eventTypes } = require('./infrastructure/events');
+const { SystemEvents } = eventTypes;
 
 // Importar rutas
-const authRoutes = require('./api/auth/auth.routes');
-const tasksRoutes = require('./api/tasks/tasks.routes');
+const authRoutes = require('./api/auth/auth.controller');
+const tasksRoutes = require('./api/tasks/task.controller');
+const realtimeRoutes = require('./api/realtime/realtime.controller');
+const notificationRoutes = require('./api/notifications/notification.controller');
 
 // Crear aplicación Express
 const app = express();
@@ -21,21 +26,59 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
+// Middleware para inyectar componentes en el objeto request
+app.use((req, res, next) => {
+  // Obtener componentes desde la aplicación
+  const components = app.get('components');
+  if (components) {
+    req.components = components;
+    req.events = components.events;
+  }
+  next();
+});
+
 // Configurar rutas base
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/realtime', realtimeRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Ruta de verificación de salud
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  const healthInfo = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    // Incluir información adicional si está disponible
+    eventsEnabled: !!(req.events && req.events.publisher),
+    webSocketsEnabled: !!(req.components && req.components.websockets && req.components.websockets.enabled)
+  };
+
+  res.status(200).json(healthInfo);
+
+  // Publicar evento de health check si los eventos están disponibles
+  if (req.events && req.events.publisher) {
+    await req.events.publisher.publish(SystemEvents.HEALTH_CHECK, healthInfo);
+  }
 });
 
 // Middleware para rutas no encontradas
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    status: 'error', 
-    message: `Ruta no encontrada: ${req.originalUrl}` 
-  });
+// Middleware para rutas no encontradas
+app.all('*', async (req, res) => {
+  const notFoundError = {
+    status: 'error',
+    message: `Ruta no encontrada: ${req.originalUrl}`
+  };
+
+  res.status(404).json(notFoundError);
+
+  // Registrar el error como evento si está disponible
+  if (req.events && req.events.publisher) {
+    void req.events.publisher.publish(SystemEvents.ERROR, {
+      type: 'NotFound',
+      path: req.originalUrl,
+      method: req.method
+    });
+  }
 });
 
 // Middleware de manejo de errores global

@@ -1,0 +1,107 @@
+### 1. Registro de usuario
+POST http://localhost:4000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "TestPass123!",
+  "name": "Test User"
+}
+
+> {%
+    client.test("Registro exitoso", () => {
+        client.assert(response.status === 201, "Status 201 esperado");
+        client.assert(response.body.data.user.email === "testuser@example.com", "Email debe coincidir");
+    });
+%}
+
+### 2. Login con usuario registrado
+POST http://localhost:4000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "TestPass123!"
+}
+
+> {%
+    client.test("Login exitoso", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+        client.assert(response.body.data.accessToken, "Token de acceso requerido");
+        client.global.set("accessToken", response.body.data.accessToken);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+    });
+%}
+
+### 3. Obtener perfil de usuario
+GET http://localhost:4000/api/auth/me
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Perfil obtenido", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+        client.assert(response.body.data.email === "testuser@example.com", "Email debe coincidir");
+    });
+%}
+
+### 4. Actualizar perfil de usuario
+PUT http://localhost:4000/api/auth/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Ricardo Emanuel Reyes Ramirez"
+}
+
+> {%
+    client.test("Actualización exitosa", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+        client.assert(response.body.data.name === "Nuevo Nombre", "Nombre actualizado");
+    });
+%}
+
+### 5. Cambiar contraseña
+POST http://localhost:4000/api/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "TestPass123!",
+  "newPassword": "NewPass456!"
+}
+
+> {%
+    client.test("Contraseña cambiada", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+    });
+%}
+
+### 6. Login con nueva contraseña
+POST http://localhost:4000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "NewPass456!"
+}
+
+> {%
+    client.test("Login con nueva contraseña", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+    });
+%}
+
+### 7. Refrescar token
+POST http://localhost:4000/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.test("Token refrescado", () => {
+        client.assert(response.status === 200, "Status 200 esperado");
+        client.assert(response.body.data.accessToken, "Nuevo token requerido");
+    });
+%}
