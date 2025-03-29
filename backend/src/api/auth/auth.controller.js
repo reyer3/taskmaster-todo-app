@@ -18,6 +18,11 @@ const { convertToAppError } = require('../../utils/errors/error-converter');
 const userRepository = new UserRepository();
 const authService = new AuthService(userRepository);
 
+// Crear una nueva función centralizada para convertir errores de validación en objetos de error
+const createValidationError = (message, errors) => {
+  return new ValidationError(message, errors);
+};
+
 /**
  * Valida los datos de registro de un nuevo usuario
  * 
@@ -134,7 +139,9 @@ router.post('/register', async (req, res, next) => {
     const validationErrors = validateRegistration({ email, password, name });
     
     if (validationErrors) {
-      throw new ValidationError('Error de validación', validationErrors);
+      // Usar la función centralizada en lugar de throw directo
+      const error = createValidationError('Error de validación', validationErrors);
+      return next(error);
     }
 
     const result = await authService.register({ email, password, name });
@@ -180,7 +187,9 @@ router.post('/login', async (req, res, next) => {
     const validationErrors = validateLogin({ email, password });
     
     if (validationErrors) {
-      throw new ValidationError('Error de validación', validationErrors);
+      // Usar la función centralizada en lugar de throw directo
+      const error = createValidationError('Error de validación', validationErrors);
+      return next(error);
     }
 
     const result = await authService.login(email, password);
@@ -222,7 +231,8 @@ router.get('/me', authMiddleware, async (req, res, next) => {
     const userId = req.user?.id;
 
     if (!userId) {
-      throw new AppError('Usuario no autenticado correctamente', 401);
+      const error = new AppError('Usuario no autenticado correctamente', 401);
+      return next(error);
     }
 
     const user = await authService.getUserById(userId);
@@ -253,11 +263,13 @@ router.put('/me', authMiddleware, async (req, res, next) => {
     const { validatedUpdates, errors } = validateUserUpdates({ name, email });
     
     if (Object.keys(errors).length > 0) {
-      throw new ValidationError('Error de validación', errors);
+      const error = createValidationError('Error de validación', errors);
+      return next(error);
     }
     
     if (Object.keys(validatedUpdates).length === 0) {
-      throw new ValidationError('Se requiere al menos un campo válido para actualizar');
+      const error = createValidationError('Se requiere al menos un campo válido para actualizar');
+      return next(error);
     }
 
     const updatedUser = await authService.updateUser(userId, validatedUpdates);
@@ -288,7 +300,8 @@ router.post('/change-password', authMiddleware, async (req, res, next) => {
     const validationErrors = validatePasswordChange({ currentPassword, newPassword });
     
     if (validationErrors) {
-      throw new ValidationError('Error de validación', validationErrors);
+      const error = createValidationError('Error de validación', validationErrors);
+      return next(error);
     }
 
     await authService.changePassword(userId, currentPassword, newPassword);
@@ -317,7 +330,8 @@ router.post('/refresh-token', async (req, res, next) => {
     const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
-      throw new ValidationError('Refresh token es requerido');
+      const error = createValidationError('Refresh token es requerido');
+      return next(error);
     }
 
     const result = await authService.refreshToken(refreshToken);
