@@ -21,11 +21,11 @@ const authService = new AuthService(userRepository);
 /**
  * Valida los datos de registro de un nuevo usuario
  * 
- * @param {import('express').Request} req - Objeto de solicitud Express
- * @throws {ValidationError} Si los datos son inválidos
+ * @param {Object} data - Datos de registro
+ * @returns {Object|null} Objeto con errores o null si no hay errores
  */
-const validateRegistration = (req) => {
-  const { email, password, name } = req.body;
+const validateRegistration = (data) => {
+  const { email, password, name } = data;
   const errors = {};
 
   if (!email) errors.email = 'Email es requerido';
@@ -37,27 +37,85 @@ const validateRegistration = (req) => {
   if (!name) errors.name = 'Nombre es requerido';
   else if (name.trim().length < 2) errors.name = 'El nombre debe tener al menos 2 caracteres';
 
-  if (Object.keys(errors).length > 0) {
-    throw new ValidationError('Error de validación', errors);
-  }
+  return Object.keys(errors).length > 0 ? errors : null;
 };
 
 /**
  * Valida los datos de inicio de sesión
  * 
- * @param {import('express').Request} req - Objeto de solicitud Express
- * @throws {ValidationError} Si los datos son inválidos
+ * @param {Object} data - Datos de inicio de sesión
+ * @returns {Object|null} Objeto con errores o null si no hay errores
  */
-const validateLogin = (req) => {
-  const { email, password } = req.body;
+const validateLogin = (data) => {
+  const { email, password } = data;
   const errors = {};
 
   if (!email) errors.email = 'Email es requerido';
   if (!password) errors.password = 'Contraseña es requerida';
 
-  if (Object.keys(errors).length > 0) {
-    throw new ValidationError('Error de validación', errors);
+  return Object.keys(errors).length > 0 ? errors : null;
+};
+
+/**
+ * Valida las contraseñas para el cambio
+ * 
+ * @param {Object} data - Datos con contraseñas para cambiar
+ * @returns {Object|null} Objeto con errores o null si no hay errores
+ */
+const validatePasswordChange = (data) => {
+  const { currentPassword, newPassword } = data;
+  const errors = {};
+
+  if (!currentPassword) {
+    errors.currentPassword = 'La contraseña actual es requerida';
   }
+
+  if (!newPassword) {
+    errors.newPassword = 'La nueva contraseña es requerida';
+  } else {
+    if (newPassword.length < 8) {
+      errors.newPassword = 'La nueva contraseña debe tener al menos 8 caracteres';
+    } else {
+      // Validación adicional de contraseña segura
+      if (!/[A-Z]/.test(newPassword)) {
+        errors.newPassword = 'La contraseña debe contener al menos una letra mayúscula';
+      } else if (!/[0-9]/.test(newPassword)) {
+        errors.newPassword = 'La contraseña debe contener al menos un número';
+      }
+    }
+  }
+
+  return Object.keys(errors).length > 0 ? errors : null;
+};
+
+/**
+ * Valida actualizaciones de usuario
+ * 
+ * @param {Object} updates - Datos a actualizar
+ * @returns {Object} Resultado de validación { validatedUpdates, errors }
+ */
+const validateUserUpdates = (updates) => {
+  const { name, email } = updates;
+  const validatedUpdates = {};
+  const errors = {};
+  
+  if (name !== undefined) {
+    if (typeof name === 'string' && name.trim().length >= 2) {
+      validatedUpdates.name = name.trim();
+    } else if (name !== null) {
+      errors.name = 'El nombre debe tener al menos 2 caracteres';
+    }
+  }
+
+  if (email !== undefined) {
+    if (typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      validatedUpdates.email = email.trim().toLowerCase();
+    } else if (email !== null) {
+      errors.email = 'Email inválido';
+    }
+  }
+  
+  return { validatedUpdates, errors };
 };
 
 /**
@@ -72,9 +130,13 @@ const validateLogin = (req) => {
 router.post('/register', async (req, res, next) => {
   try {
     // Validación robusta de entrada
-    validateRegistration(req);
-
     const { email, password, name } = req.body;
+    const validationErrors = validateRegistration({ email, password, name });
+    
+    if (validationErrors) {
+      throw new ValidationError('Error de validación', validationErrors);
+    }
+
     const result = await authService.register({ email, password, name });
 
     // Separar la respuesta de autenticación (tokens) de los datos de usuario
@@ -114,9 +176,13 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     // Validación de datos de entrada
-    validateLogin(req);
-
     const { email, password } = req.body;
+    const validationErrors = validateLogin({ email, password });
+    
+    if (validationErrors) {
+      throw new ValidationError('Error de validación', validationErrors);
+    }
+
     const result = await authService.login(email, password);
 
     const { user, accessToken, refreshToken } = result;
@@ -183,29 +249,18 @@ router.put('/me', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { name, email } = req.body;
-    const updates = {};
-
-    if (name !== undefined) {
-      if (typeof name === 'string' && name.trim().length >= 2) {
-        updates.name = name.trim();
-      } else if (name !== null) {
-        throw new ValidationError('El nombre debe tener al menos 2 caracteres');
-      }
+    
+    const { validatedUpdates, errors } = validateUserUpdates({ name, email });
+    
+    if (Object.keys(errors).length > 0) {
+      throw new ValidationError('Error de validación', errors);
     }
-
-    if (email !== undefined) {
-      if (typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        updates.email = email.trim().toLowerCase();
-      } else if (email !== null) {
-        throw new ValidationError('Email inválido');
-      }
-    }
-
-    if (Object.keys(updates).length === 0) {
+    
+    if (Object.keys(validatedUpdates).length === 0) {
       throw new ValidationError('Se requiere al menos un campo válido para actualizar');
     }
 
-    const updatedUser = await authService.updateUser(userId, updates);
+    const updatedUser = await authService.updateUser(userId, validatedUpdates);
 
     res.json({
       status: 'success',
@@ -229,26 +284,11 @@ router.post('/change-password', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword) {
-      throw new ValidationError('La contraseña actual es requerida');
-    }
-
-    if (!newPassword) {
-      throw new ValidationError('La nueva contraseña es requerida');
-    }
-
-    if (newPassword.length < 8) {
-      throw new ValidationError('La nueva contraseña debe tener al menos 8 caracteres');
-    }
-
-    // Validación adicional de contraseña segura
-    if (!/[A-Z]/.test(newPassword)) {
-      throw new ValidationError('La contraseña debe contener al menos una letra mayúscula');
-    }
-
-    if (!/[0-9]/.test(newPassword)) {
-      throw new ValidationError('La contraseña debe contener al menos un número');
+    
+    const validationErrors = validatePasswordChange({ currentPassword, newPassword });
+    
+    if (validationErrors) {
+      throw new ValidationError('Error de validación', validationErrors);
     }
 
     await authService.changePassword(userId, currentPassword, newPassword);
