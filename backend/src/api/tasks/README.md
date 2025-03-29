@@ -1,18 +1,35 @@
 # Módulo de Tareas
 
-Este directorio contiene los controladores y rutas relacionados con la gestión de tareas.
+Este directorio contiene el controlador para las operaciones relacionadas con la gestión de tareas en la aplicación TaskMaster.
 
-## Estructura
+## Estructura Actual
 
-- `tasks.controller.js`: Controladores para las operaciones CRUD de tareas
-- `tasks.routes.js`: Definición de rutas para la API de tareas
-- `tasks.validation.js`: Validaciones para las peticiones de tareas
+- `task.controller.js`: Implementa tanto los controladores como las rutas para las operaciones CRUD de tareas.
 
 ## Responsabilidades
 
-Los controladores en este directorio son responsables de:
+El controlador en este directorio es responsable de:
+
 - Crear nuevas tareas
 - Obtener tareas de un usuario
+- Filtrar tareas próximas a vencer
 - Actualizar tareas existentes
 - Eliminar tareas
-- Filtrar y buscar tareas
+- Marcar tareas como completadas o pendientes
+
+## Implementación
+
+El módulo utiliza Express Router para definir los endpoints de la API. Cada ruta está protegida por un middleware de autenticación que garantiza que solo los usuarios autenticados puedan acceder a las operaciones de tareas. Las validaciones se realizan tanto en el controlador como en la capa de servicio.
+
+## Endpoints Principales
+
+- `GET /api/tasks`: Obtiene todas las tareas del usuario autenticado
+- `GET /api/tasks/upcoming`: Obtiene tareas próximas a vencer
+- `POST /api/tasks`: Crea una nueva tarea
+- `PUT /api/tasks/:id`: Actualiza una tarea existente
+- `DELETE /api/tasks/:id`: Elimina una tarea
+- `PATCH /api/tasks/:id/complete`: Marca una tarea como completada o pendiente
+
+## Seguridad
+
+Todas las operaciones verifican que el usuario autenticado sea el propietario de las tareas, implementando un control de acceso basado en la propiedad de los recursos.
