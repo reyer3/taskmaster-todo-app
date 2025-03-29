@@ -108,7 +108,7 @@ Gestiona la comunicación con el exterior. Incluye:
 **Ejemplo**:
 
 ```javascript
-// taskController.js
+// task.controller.js
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const task = await taskService.createTask(req.body, req.user.id);
@@ -163,11 +163,10 @@ En React, los componentes deben ser principalmente presentacionales, y la lógic
 ## Ejemplo Completo
 
 Ver los ejemplos de código en los directorios:
-- `/backend/src/domain/tasks/Task.js`
-- `/backend/src/services/TaskService.js`
-- `/backend/src/infrastructure/repositories/TaskRepository.js`
-- `/backend/src/api/tasks/taskController.js`
-
+- `/backend/src/domain/tasks/task.js`
+- `/backend/src/services/task.service.js`
+- `/backend/src/infrastructure/repositories/task.repository.js`
+- `/backend/src/api/tasks/task.controller.js`
 ## Recursos Adicionales
 
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
