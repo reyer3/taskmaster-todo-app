@@ -62,7 +62,7 @@ apiClient.interceptors.response.use(
       // que cae fuera del rango 2xx
       error.message = error.response.data.message || 'Error en la petición';
     } else if (error.request) {
-      // La petición fue hecha pero no se recibió respuesta
+      // La petición fue hecha, pero no se recibió respuesta
       error.message = 'No se pudo conectar con el servidor';
     } else {
       // Algo ocurrió al configurar la petición que desencadenó un error

@@ -3,6 +3,8 @@
  */
 const { Prisma } = require('@prisma/client');
 const { AppError } = require('../../utils/errors/app-error');
+const { eventTypes } = require('../events');
+const { SystemEvents } = eventTypes;
 
 // Determina el entorno una sola vez
 const isProduction = process.env.NODE_ENV === 'production';
@@ -118,7 +120,27 @@ function errorHandler(err, req, res, _next) {
     responseBody.code = 'INTERNAL_SERVER_ERROR';
   }
 
-  // 8. Enviar la respuesta JSON estandarizada
+  // 8. Publicar el error como evento si está disponible el sistema de eventos
+  if (req.events && req.events.publisher) {
+    const eventPayload = {
+      code: responseBody.code,
+      message: responseBody.message,
+      statusCode,
+      path: req.originalUrl,
+      method: req.method,
+      // Solo incluir stack trace completo en desarrollo
+      stack: isProduction ? undefined : (err.stack || undefined),
+      timestamp: new Date().toISOString()
+    };
+    
+    // Publicar evento de error de forma asíncrona (no esperar su resolución)
+    req.events.publisher.publish(SystemEvents.ERROR, eventPayload)
+      .catch(eventError => {
+        console.error('Error al publicar evento de error:', eventError);
+      });
+  }
+
+  // 9. Enviar la respuesta JSON estandarizada
   res.status(statusCode).json(responseBody);
 }
 

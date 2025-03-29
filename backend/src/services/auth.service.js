@@ -19,6 +19,10 @@ const {
   ValidationError: AppValidationError
 } = require('../utils/errors/app-error');
 
+// Importar el sistema de eventos
+const { eventPublisher, eventTypes } = require('../infrastructure/events');
+const { UserEvents } = eventTypes;
+
 class AuthService {
   // Constantes de clase para mensajes de error comunes
   static ERROR_MESSAGES = {
@@ -36,6 +40,7 @@ class AuthService {
     this.jwtSecret = config.jwtSecret || process.env.JWT_SECRET || 'dev_secret';
     this.jwtExpiresIn = config.jwtExpiresIn || '1d';
     this.refreshTokenExpiresIn = config.refreshTokenExpiresIn || '7d';
+    this.eventPublisher = config.eventPublisher || eventPublisher;
   }
 
   /**
@@ -68,9 +73,18 @@ class AuthService {
 
       // Guardar usuario
       const createdUser = await this.userRepository.create(user);
+      
+      // Generar tokens y preparar respuesta
+      const authResponse = this._createAuthResponse(createdUser);
+      
+      // Publicar evento de registro de usuario
+      await this.eventPublisher.publish(UserEvents.REGISTERED, {
+        userId: createdUser.id,
+        email: createdUser.email,
+        timestamp: new Date().toISOString()
+      });
 
-      // Generar tokens y devolver respuesta
-      return this._createAuthResponse(createdUser);
+      return authResponse;
     } catch (error) {
       this._handleServiceError(error, 'Error al registrar usuario');
     }
@@ -87,10 +101,41 @@ class AuthService {
   async login(email, password) {
     try {
       const user = await this._findAndValidateUser(email);
-      await this._validatePassword(user, password);
-
-      return this._createAuthResponse(user);
+      
+      try {
+        await this._validatePassword(user, password);
+        
+        // Generar tokens y preparar respuesta
+        const authResponse = this._createAuthResponse(user);
+        
+        // Publicar evento de inicio de sesión exitoso
+        await this.eventPublisher.publish(UserEvents.LOGIN_SUCCESS, {
+          userId: user.id,
+          email: user.email,
+          timestamp: new Date().toISOString()
+        });
+        
+        return authResponse;
+      } catch (error) {
+        // Publicar evento de inicio de sesión fallido
+        await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
+          email,
+          reason: 'invalid_password',
+          timestamp: new Date().toISOString()
+        });
+        
+        throw error;
+      }
     } catch (error) {
+      if (error instanceof AuthenticationError) {
+        // Publicar evento de inicio de sesión fallido (usuario no encontrado)
+        await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
+          email,
+          reason: 'user_not_found',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       this._handleServiceError(error, 'Error al iniciar sesión', AuthenticationError);
     }
   }
@@ -155,6 +200,7 @@ class AuthService {
   async updateUser(userId, updates) {
     try {
       const user = await this._findUserById(userId);
+      const originalEmail = user.email;
 
       // Verificar nuevo email si se intenta cambiar
       if (updates.email && updates.email !== user.email) {
@@ -166,6 +212,15 @@ class AuthService {
 
       // Guardar cambios
       const updatedUser = await this.userRepository.update(user);
+      
+      // Publicar evento de actualización de usuario
+      await this.eventPublisher.publish(UserEvents.UPDATED, {
+        userId: updatedUser.id,
+        changes: Object.keys(updates),
+        emailChanged: updates.email && updates.email !== originalEmail,
+        timestamp: new Date().toISOString()
+      });
+      
       return updatedUser.toDTO();
     } catch (error) {
       this._handleServiceError(error, 'Error al actualizar usuario');
@@ -236,6 +291,12 @@ class AuthService {
 
       await user.changePassword(currentPassword, newPassword);
       await this.userRepository.update(user);
+      
+      // Publicar evento de cambio de contraseña
+      await this.eventPublisher.publish(UserEvents.PASSWORD_CHANGED, {
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
 
       return true;
     } catch (error) {
