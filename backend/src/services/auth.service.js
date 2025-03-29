@@ -459,7 +459,7 @@ class AuthService {
    * @param {string} message - Mensaje para usar si no hay error o necesita envolverse
    * @param {typeof AppError} ErrorClass - Clase de error a usar si se necesita crear uno nuevo
    * @throws {AppError} Siempre lanza el error convertido
-   * @deprecated Usar throw _convertServiceError() en su lugar para mayor claridad
+   * @deprecated Este método será eliminado en versiones futuras, usar 'throw _convertServiceError()' en su lugar
    * @private
    */
   _handleServiceError(error, message, ErrorClass = AppError) {
