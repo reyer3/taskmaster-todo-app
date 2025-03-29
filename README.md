@@ -37,19 +37,55 @@ Aplicación de gestión de tareas con autenticación de usuarios desarrollada co
 
 Este proyecto implementa una arquitectura **DDD-Light** (Domain-Driven Design simplificado) que incorpora elementos de la **Arquitectura Limpia** (Clean Architecture) y el principio **Tell, Don't Ask**. Para más detalles, consulta nuestro [ADR-0002](./docs/architecture/decisions/0002-ddd-light-architecture.md).
 
-## 🌿 Flujo de Trabajo Git
+## 🌿 Flujo de Trabajo Git (Git Flow)
 
-Utilizamos **Git Flow** como estrategia de branching. Todas las nuevas características se desarrollan en ramas `feature/*` que parten de `develop`. Para más detalles, consulta nuestro [ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md).
+Utilizamos **Git Flow** como estrategia de branching, siguiendo nuestra [decisión arquitectónica documentada en ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md).
 
 ### Ramas principales
 - `main`: Código de producción estable
 - `develop`: Rama de integración para desarrollo
+
+### Tipos de ramas
+- **Feature**: Para nuevas características (`feature/nombre-caracteristica`)
+- **Release**: Preparación para versiones (`release/x.y.z`)
+- **Hotfix**: Correcciones urgentes en producción (`hotfix/x.y.z`)
+
+### Script auxiliar para Git Flow
+
+El proyecto incluye un script Bash para facilitar el trabajo con Git Flow:
+
+```bash
+# Ver ayuda y comandos disponibles
+./scripts/git-flow-helper.sh help
+
+# Iniciar una nueva característica
+./scripts/git-flow-helper.sh feature start nombre-caracteristica
+
+# Finalizar una característica
+./scripts/git-flow-helper.sh feature finish nombre-caracteristica
+
+# Iniciar una versión
+./scripts/git-flow-helper.sh release start x.y.z
+
+# Finalizar una versión
+./scripts/git-flow-helper.sh release finish x.y.z
+
+# Ver estado actual de Git Flow
+./scripts/git-flow-helper.sh status
+```
 
 ### Proceso para contribuir
 1. Crea una rama desde `develop`: `git checkout -b feature/nombre-caracteristica develop`
 2. Desarrolla y haz commits de tu característica
 3. Envía un Pull Request a `develop`
 4. Después de revisión, se fusionará a `develop`
+5. Las versiones estables se fusionan a `main` mediante ramas `release/`
+
+### Protección de ramas
+Las ramas `main` y `develop` están protegidas:
+- Requieren revisión de pull requests antes de fusionar
+- No se permite push directo a estas ramas
+- Los CI checks deben pasar antes de fusionar
 
 ## 📋 Requisitos previos
 
