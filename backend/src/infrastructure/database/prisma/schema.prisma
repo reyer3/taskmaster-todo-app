@@ -9,14 +9,16 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash     String
-  name         String
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  tasks        Task[]
+  id              String            @id @default(uuid())
+  email           String            @unique
+  passwordHash    String
+  name            String
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  tasks           Task[]
+  notifications   Notification[]
+  preferences     NotificationPreference?
   @@map("users")
   @@index([email])
 }
@@ -39,4 +41,53 @@ model Task {
   @@index([category])
   @@index([dueDate])
   @@index([priority])
+}
+
+model Notification {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String    // Tipo de evento: task.created, task.completed, etc.
+  title        String
+  message      String
+  isRead       Boolean   @default(false)
+  data         Json?     // Datos adicionales en formato JSON
+  relatedId    String?   // ID relacionado (por ejemplo, ID de tarea)
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime? // Fecha opcional de expiración
+  
+  @@map("notifications")
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Email
+  emailEnabled      Boolean   @default(true)
+  emailTaskCreated  Boolean   @default(true)
+  emailTaskDueSoon  Boolean   @default(true)
+  emailTaskCompleted Boolean   @default(false)
+  
+  // Push/WebSocket
+  pushEnabled       Boolean   @default(true)
+  pushTaskCreated   Boolean   @default(true)
+  pushTaskUpdated   Boolean   @default(true)
+  pushTaskCompleted Boolean   @default(true)
+  pushTaskDeleted   Boolean   @default(false)
+  pushTaskDueSoon   Boolean   @default(true)
+  
+  // Configuración general
+  dailyDigest       Boolean   @default(false)
+  weeklyDigest      Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@map("notification_preferences")
 }
