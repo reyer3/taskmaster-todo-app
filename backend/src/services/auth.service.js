@@ -59,6 +59,7 @@ class AuthService {
    * @returns {Promise<Object>} Objeto con usuario y tokens
    * @throws {ConflictError} Si el email ya está registrado
    * @throws {ValidationError} Si los datos son inválidos
+   * @throws {AppError} Si ocurre cualquier otro error durante el proceso
    */
   async register(userData) {
     try {
@@ -78,15 +79,21 @@ class AuthService {
       const authResponse = this._createAuthResponse(createdUser);
       
       // Publicar evento de registro de usuario
-      await this.eventPublisher.publish(UserEvents.REGISTERED, {
-        userId: createdUser.id,
-        email: createdUser.email,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await this.eventPublisher.publish(UserEvents.REGISTERED, {
+          userId: createdUser.id,
+          email: createdUser.email,
+          timestamp: new Date().toISOString()
+        });
+      } catch (eventError) {
+        // Registrar error pero no interrumpir el flujo principal
+        console.error('Error al publicar evento de registro:', eventError);
+      }
 
       return authResponse;
     } catch (error) {
-      this._handleServiceError(error, 'Error al registrar usuario');
+      // Convertir y lanzar el error - siempre termina la ejecución del método
+      throw this._convertServiceError(error, 'Error al registrar usuario');
     }
   }
 
@@ -108,35 +115,50 @@ class AuthService {
         // Generar tokens y preparar respuesta
         const authResponse = this._createAuthResponse(user);
         
-        // Publicar evento de inicio de sesión exitoso
-        await this.eventPublisher.publish(UserEvents.LOGIN_SUCCESS, {
-          userId: user.id,
-          email: user.email,
-          timestamp: new Date().toISOString()
-        });
+        // Publicar evento de inicio de sesión exitoso (con manejo seguro de errores)
+        try {
+          await this.eventPublisher.publish(UserEvents.LOGIN_SUCCESS, {
+            userId: user.id,
+            email: user.email,
+            timestamp: new Date().toISOString()
+          });
+        } catch (eventError) {
+          console.error('Error al publicar evento de login exitoso:', eventError);
+          // No interrumpir el flujo principal si falla la publicación del evento
+        }
         
         return authResponse;
       } catch (error) {
-        // Publicar evento de inicio de sesión fallido
-        await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
-          email,
-          reason: 'invalid_password',
-          timestamp: new Date().toISOString()
-        });
+        // Publicar evento de inicio de sesión fallido (con manejo seguro de errores)
+        try {
+          await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
+            email,
+            reason: 'invalid_password',
+            timestamp: new Date().toISOString()
+          });
+        } catch (eventError) {
+          console.error('Error al publicar evento de login fallido:', eventError);
+        }
         
-        throw error;
+        // Re-lanzar el error original con el formato correcto
+        throw this._convertServiceError(error, 'Credenciales inválidas', AuthenticationError);
       }
     } catch (error) {
+      // Manejar el evento de usuario no encontrado
       if (error instanceof AuthenticationError) {
-        // Publicar evento de inicio de sesión fallido (usuario no encontrado)
-        await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
-          email,
-          reason: 'user_not_found',
-          timestamp: new Date().toISOString()
-        });
+        try {
+          await this.eventPublisher.publish(UserEvents.LOGIN_FAILED, {
+            email,
+            reason: 'user_not_found',
+            timestamp: new Date().toISOString()
+          });
+        } catch (eventError) {
+          console.error('Error al publicar evento de usuario no encontrado:', eventError);
+        }
       }
       
-      this._handleServiceError(error, 'Error al iniciar sesión', AuthenticationError);
+      // Uso claro y explícito: convertir y lanzar el error
+      throw this._convertServiceError(error, 'Error al iniciar sesión', AuthenticationError);
     }
   }
 
@@ -154,23 +176,20 @@ class AuthService {
       // Verificar que el usuario existe y está activo
       const user = await this.userRepository.findById(decoded.id);
       if (!user || !user.canLogin()) {
-        // Cuando usamos _handleServiceError con null, ya lanzará una excepción,
-        // no debemos continuar con el código siguiente
-        this._handleServiceError(
+        // Enfoque más claro: convertir el error y lanzarlo explícitamente
+        throw this._convertServiceError(
             null,
             AuthService.ERROR_MESSAGES.DISABLED_TOKEN,
             AuthenticationError
         );
-        // Debido a que _handleServiceError lanza una excepción, este código nunca se ejecutará
-        // Por lo tanto, es mejor usar un return explícito para claridad:
-        return; // Esta línea nunca se ejecutará, pero ayuda a la comprensión del código
       }
 
       // Generar nuevo token de acceso
       const accessToken = this._generateAccessToken(user);
       return {accessToken};
     } catch (error) {
-      this._handleServiceError(error, 'Error al renovar token', AuthenticationError);
+      // Uso explícito y claro del patrón de conversión y lanzamiento de errores
+      throw this._convertServiceError(error, 'Error al renovar token', AuthenticationError);
     }
   }
 
@@ -213,17 +232,21 @@ class AuthService {
       // Guardar cambios
       const updatedUser = await this.userRepository.update(user);
       
-      // Publicar evento de actualización de usuario
-      await this.eventPublisher.publish(UserEvents.UPDATED, {
-        userId: updatedUser.id,
-        changes: Object.keys(updates),
-        emailChanged: updates.email && updates.email !== originalEmail,
-        timestamp: new Date().toISOString()
-      });
+      // Publicar evento de actualización de usuario (con manejo seguro de errores)
+      try {
+        await this.eventPublisher.publish(UserEvents.UPDATED, {
+          userId: updatedUser.id,
+          changes: Object.keys(updates),
+          emailChanged: updates.email && updates.email !== originalEmail,
+          timestamp: new Date().toISOString()
+        });
+      } catch (eventError) {
+        console.error('Error al publicar evento de actualización de usuario:', eventError);
+      }
       
       return updatedUser.toDTO();
     } catch (error) {
-      this._handleServiceError(error, 'Error al actualizar usuario');
+      throw this._convertServiceError(error, 'Error al actualizar usuario');
     }
   }
 
@@ -242,7 +265,7 @@ class AuthService {
       // Verificar que el usuario existe y está activo
       const user = await this.userRepository.findById(decoded.id);
       if (!user || !user.canLogin()) {
-        this._handleServiceError(
+        throw this._convertServiceError(
             null,
             AuthService.ERROR_MESSAGES.DISABLED_TOKEN,
             AuthenticationError
@@ -253,13 +276,13 @@ class AuthService {
     } catch (error) {
       // Manejar errores específicos de JWT
       if (error instanceof jwt.TokenExpiredError) {
-        this._handleServiceError(
+        throw this._convertServiceError(
             error,
             'Token expirado',
             AuthenticationError
         );
       } else if (error instanceof jwt.JsonWebTokenError) {
-        this._handleServiceError(
+        throw this._convertServiceError(
             error,
             'Token inválido',
             AuthenticationError
@@ -267,7 +290,7 @@ class AuthService {
       }
 
       // Para cualquier otro tipo de error
-      this._handleServiceError(
+      throw this._convertServiceError(
           error,
           'Error al verificar token',
           AuthenticationError
@@ -292,15 +315,19 @@ class AuthService {
       await user.changePassword(currentPassword, newPassword);
       await this.userRepository.update(user);
       
-      // Publicar evento de cambio de contraseña
-      await this.eventPublisher.publish(UserEvents.PASSWORD_CHANGED, {
-        userId: user.id,
-        timestamp: new Date().toISOString()
-      });
+      // Publicar evento de cambio de contraseña (con manejo seguro de errores)
+      try {
+        await this.eventPublisher.publish(UserEvents.PASSWORD_CHANGED, {
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+      } catch (eventError) {
+        console.error('Error al publicar evento de cambio de contraseña:', eventError);
+      }
 
       return true;
     } catch (error) {
-      this._handleServiceError(error, 'Error al cambiar contraseña');
+      throw this._convertServiceError(error, 'Error al cambiar contraseña');
     }
   }
 
@@ -380,16 +407,15 @@ class AuthService {
     try {
       const isPasswordValid = await user.verifyPassword(password);
       if (!isPasswordValid) {
-        this._handleServiceError(
+        throw this._convertServiceError(
             null,
             AuthService.ERROR_MESSAGES.INVALID_CREDENTIALS,
             AuthenticationError
         );
-
       }
     } catch (error) {
-      // Usar _handleServiceError para manejar todos los tipos de errores consistentemente
-      this._handleServiceError(
+      // Uso consistente del patrón de conversión y lanzamiento de errores
+      throw this._convertServiceError(
           error,
           AuthService.ERROR_MESSAGES.INVALID_CREDENTIALS,
           AuthenticationError
@@ -397,26 +423,47 @@ class AuthService {
     }
   }
 
-  _handleServiceError(error, message, ErrorClass = AppError) {
+  /**
+   * Convierte errores al formato estandarizado de la aplicación
+   * @param {Error|null} error - Error original o null
+   * @param {string} message - Mensaje para usar si no hay error o necesita envolverse
+   * @param {typeof AppError} ErrorClass - Clase de error a usar si se necesita crear uno nuevo
+   * @returns {AppError} Error convertido al formato de la aplicación
+   * @private
+   */
+  _convertServiceError(error, message, ErrorClass = AppError) {
     // Si se pasa null o undefined como error, crear uno nuevo
     if (!error) {
-      throw new ErrorClass(message);
+      return new ErrorClass(message);
     }
 
     // Manejar diferentes tipos de errores
     if (error instanceof AppError) {
-      throw error;
+      return error;
     } else if (error instanceof ValidationError) {
-      throw new AppValidationError(error.message);
+      return new AppValidationError(error.message);
     } else if (error instanceof BusinessRuleViolationError) {
       // Añadir manejo específico para errores de reglas de negocio
-      throw new AppError(error.message, 422, 'BUSINESS_RULE_ERROR');
+      return new AppError(error.message, 422, 'BUSINESS_RULE_ERROR');
     } else {
       console.error(`Error en ${this.constructor.name}:`, error);
       const appError = new ErrorClass(message, 500);
       appError.cause = error;
-      throw appError;
+      return appError;
     }
+  }
+  
+  /**
+   * Convierte y lanza un error (método de ayuda que siempre termina la ejecución)
+   * @param {Error|null} error - Error original o null
+   * @param {string} message - Mensaje para usar si no hay error o necesita envolverse
+   * @param {typeof AppError} ErrorClass - Clase de error a usar si se necesita crear uno nuevo
+   * @throws {AppError} Siempre lanza el error convertido
+   * @deprecated Usar throw _convertServiceError() en su lugar para mayor claridad
+   * @private
+   */
+  _handleServiceError(error, message, ErrorClass = AppError) {
+    throw this._convertServiceError(error, message, ErrorClass);
   }
 
 }
