@@ -1,13 +1,13 @@
 /**
  * Clase base para todos los errores personalizados de la aplicación
- * 
+ *
  * Esta clase extiende Error y proporciona funcionalidad adicional
  * para manejar errores de forma consistente en toda la aplicación.
  */
 class AppError extends Error {
   /**
    * Constructor para errores de aplicación
-   * 
+   *
    * @param {string} message - Mensaje descriptivo del error
    * @param {number} statusCode - Código HTTP para la respuesta
    * @param {string} code - Código interno del error
@@ -72,11 +72,31 @@ class ConflictError extends AppError {
   }
 }
 
+/**
+ * Error para violaciones de reglas de negocio
+ */
+class BusinessRuleError extends AppError {
+  constructor(message = 'Operación no permitida por reglas de negocio') {
+    super(message, 422, 'BUSINESS_RULE_ERROR');
+  }
+}
+
+/**
+ * Error para servicios externos no disponibles
+ */
+class ServiceUnavailableError extends AppError {
+  constructor(message = 'Servicio no disponible temporalmente') {
+    super(message, 503, 'SERVICE_UNAVAILABLE');
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
   AuthenticationError,
   AuthorizationError,
   ValidationError,
-  ConflictError
+  ConflictError,
+  BusinessRuleError,
+  ServiceUnavailableError
 };

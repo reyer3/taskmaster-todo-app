@@ -3,64 +3,57 @@
  */
 const { AuthService } = require('../../services/auth.service');
 const { UserRepository } = require('../repositories/user.repository');
+const { convertToAppError } = require('../../utils/errors/error-converter');
+const { AuthenticationError, AuthorizationError } = require('../../utils/errors/app-error');
 
-// Crear instancias de repositorio y servicio
+// Inicializar servicios necesarios
 const userRepository = new UserRepository();
 const authService = new AuthService(userRepository);
 
 /**
- * Middleware que verifica el token JWT y añade el usuario a la request
- * @param {Object} req - Objeto request de Express
- * @param {Object} res - Objeto response de Express
- * @param {Function} next - Función next de Express
+ * Middleware que verifica la autenticación mediante token JWT
+ */
+/**
+ * Middleware que verifica la autenticación mediante token JWT
  */
 const authMiddleware = async (req, res, next) => {
+  // Obtener token del header Authorization
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new AuthenticationError('No se proporcionó token de autenticación'));
+  }
+
+  // Extraer el token
+  const token = authHeader.split(' ')[1];
+
   try {
-    // Obtener el token del header Authorization
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    
-    // Verificar y decodificar el token
-    const decoded = authService.verifyToken(token);
-    
-    // Añadir información del usuario a la request
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role
-    };
-    
+    // CORREGIDO: Uso de await para esperar la resolución de la promesa
+    req.user = await authService.verifyToken(token);
+
+    // Continuar con la solicitud
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid or expired token' });
+    next(convertToAppError(error));
   }
 };
 
 /**
  * Middleware que verifica si el usuario tiene rol de administrador
- * @param {Object} req - Objeto request de Express
- * @param {Object} res - Objeto response de Express
- * @param {Function} next - Función next de Express
  */
 const adminMiddleware = (req, res, next) => {
   // El authMiddleware debe ejecutarse primero
   if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
+    // Crear error directamente sin try-catch innecesario
+    return next(new AuthenticationError('Se requiere autenticación'));
   }
-  
+
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin privileges required' });
+    // Crear error directamente sin try-catch innecesario
+    return next(new AuthorizationError('Se requieren privilegios de administrador'));
   }
-  
+
+  // Si todo está bien, continuar
   next();
 };
 

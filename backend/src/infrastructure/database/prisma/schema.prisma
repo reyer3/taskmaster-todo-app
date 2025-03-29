@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,33 +9,34 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
+  id           String    @id @default(uuid())
   email        String    @unique
-  password     String
+  passwordHash     String
   name         String
+  isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   tasks        Task[]
-
   @@map("users")
   @@index([email])
 }
 
 model Task {
-  id           Int       @id @default(autoincrement())
+  id           String    @id @default(uuid())
   title        String
   description  String?
   completed    Boolean   @default(false)
   category     String    @default("personal")
+  priority     String    @default("none")
   dueDate      DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  userId       Int
+  userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@map("tasks")
   @@index([userId])
   @@index([completed])
   @@index([category])
   @@index([dueDate])
+  @@index([priority])
 }

@@ -4,13 +4,14 @@
  * Este archivo configura la aplicación Express, middleware y rutas
  */
 const express = require('express');
+require('express-async-errors');
 const cors = require('cors');
 const { errorHandler } = require('./infrastructure/middlewares/error.middleware');
 const { requestLogger } = require('./infrastructure/middlewares/logger.middleware');
 
 // Importar rutas
-const authRoutes = require('./api/auth/auth.routes');
-const tasksRoutes = require('./api/tasks/tasks.routes');
+const authRoutes = require('./api/auth/auth.controller');
+const tasksRoutes = require('./api/tasks/task.controller');
 
 // Crear aplicación Express
 const app = express();

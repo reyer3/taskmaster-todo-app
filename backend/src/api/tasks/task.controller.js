@@ -1,109 +1,231 @@
 /**
- * Controlador para endpoints de tareas
+ * Router para Endpoints de Autenticación
+ * Implementa todas las operaciones relacionadas con autenticación y perfil de usuario.
  */
 const express = require('express');
 const router = express.Router();
-const { TaskService } = require('../../services/task.service');
-const { TaskRepository } = require('../../infrastructure/repositories/task.repository');
+
+// --- Dependencias ---
+const { AuthService } = require('../../services/auth.service');
+const { UserRepository } = require('../../infrastructure/repositories/user.repository');
 const { authMiddleware } = require('../../infrastructure/middlewares/auth.middleware');
+const { ValidationError, AppError } = require('../../utils/errors/app-error');
 
-// Crear instancias de repositorio y servicio
-const taskRepository = new TaskRepository();
-const taskService = new TaskService(taskRepository);
+// --- Instancias ---
+const userRepository = new UserRepository();
+const authService = new AuthService(userRepository);
 
-// Obtener todas las tareas del usuario autenticado
-router.get('/', authMiddleware, async (req, res) => {
-  try {
-    const tasks = await taskService.getUserTasks(req.user.id);
-    res.json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// --- Validadores ---
+const validateRegistration = (req) => {
+  const { email, password, name } = req.body;
+  const errors = {};
+
+  if (!email) errors.email = 'Email es requerido';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Email inválido';
+
+  if (!password) errors.password = 'Contraseña es requerida';
+  else if (password.length < 8) errors.password = 'La contraseña debe tener al menos 8 caracteres';
+
+  if (!name) errors.name = 'Nombre es requerido';
+  else if (name.trim().length < 2) errors.name = 'El nombre debe tener al menos 2 caracteres';
+
+  if (Object.keys(errors).length > 0) {
+    throw new ValidationError('Error de validación', errors);
   }
+};
+
+const validateLogin = (req) => {
+  const { email, password } = req.body;
+  const errors = {};
+
+  if (!email) errors.email = 'Email es requerido';
+  if (!password) errors.password = 'Contraseña es requerida';
+
+  if (Object.keys(errors).length > 0) {
+    throw new ValidationError('Error de validación', errors);
+  }
+};
+
+// --- Endpoints ---
+
+/**
+ * @route POST /api/auth/register
+ * @desc Registra un nuevo usuario
+ * @access Público
+ */
+router.post('/register', async (req, res) => {
+  // Validación robusta de entrada
+  validateRegistration(req);
+
+  const { email, password, name } = req.body;
+  const result = await authService.register({ email, password, name });
+
+  // Separar la respuesta de autenticación (tokens) de los datos de usuario
+  const { user, accessToken, refreshToken } = result;
+
+  // Establecer refreshToken como cookie HTTP-only para mayor seguridad
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+    sameSite: 'strict'
+  });
+
+  res.status(201).json({
+    user,
+    accessToken,
+    message: 'Usuario registrado exitosamente'
+  });
 });
 
-// Obtener tareas próximas a vencer
-router.get('/upcoming', authMiddleware, async (req, res) => {
-  try {
-    const days = req.query.days ? parseInt(req.query.days) : 7;
-    const tasks = await taskService.getUpcomingTasks(req.user.id, days);
-    res.json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+/**
+ * @route POST /api/auth/login
+ * @desc Inicia sesión de usuario
+ * @access Público
+ */
+router.post('/login', async (req, res) => {
+  validateLogin(req);
+
+  const { email, password } = req.body;
+  const result = await authService.login(email, password);
+
+  const { user, accessToken, refreshToken } = result;
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'strict'
+  });
+
+  res.json({
+    user,
+    accessToken,
+    message: 'Inicio de sesión exitoso'
+  });
 });
 
-// Crear una nueva tarea
-router.post('/', authMiddleware, async (req, res) => {
-  try {
-    const taskData = req.body;
-    const task = await taskService.createTask(taskData, req.user.id);
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+/**
+ * @route GET /api/auth/me
+ * @desc Obtiene perfil del usuario autenticado
+ * @access Privado
+ */
+router.get('/me', authMiddleware, async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new AppError('Usuario no autenticado correctamente', 401);
   }
+
+  const user = await authService.getUserById(userId);
+  res.json(user);
 });
 
-// Actualizar una tarea existente
-router.put('/:id', authMiddleware, async (req, res) => {
-  try {
-    const taskId = req.params.id;
-    const updates = req.body;
-    const task = await taskService.updateTask(taskId, updates, req.user.id);
-    res.json(task);
-  } catch (error) {
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ message: error.message });
+/**
+ * @route PUT /api/auth/me
+ * @desc Actualiza perfil del usuario
+ * @access Privado
+ */
+router.put('/me', authMiddleware, async (req, res) => {
+  const userId = req.user?.id;
+  const { name, email } = req.body;
+  const updates = {};
+
+  if (name !== undefined) {
+    if (typeof name === 'string' && name.trim().length >= 2) {
+      updates.name = name.trim();
+    } else if (name !== null) {
+      throw new ValidationError('El nombre debe tener al menos 2 caracteres');
     }
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({ message: error.message });
-    }
-    res.status(400).json({ message: error.message });
   }
+
+  if (email !== undefined) {
+    if (typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      updates.email = email.trim().toLowerCase();
+    } else if (email !== null) {
+      throw new ValidationError('Email inválido');
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ValidationError('Se requiere al menos un campo válido para actualizar');
+  }
+
+  const updatedUser = await authService.updateUser(userId, updates);
+  res.json(updatedUser);
 });
 
-// Eliminar una tarea
-router.delete('/:id', authMiddleware, async (req, res) => {
-  try {
-    const taskId = req.params.id;
-    await taskService.deleteTask(taskId, req.user.id);
-    res.status(204).end();
-  } catch (error) {
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
+/**
+ * @route POST /api/auth/change-password
+ * @desc Cambia contraseña del usuario
+ * @access Privado
+ */
+router.post('/change-password', authMiddleware, async (req, res) => {
+  const userId = req.user?.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword) {
+    throw new ValidationError('La contraseña actual es requerida');
   }
+
+  if (!newPassword) {
+    throw new ValidationError('La nueva contraseña es requerida');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ValidationError('La nueva contraseña debe tener al menos 8 caracteres');
+  }
+
+  // Validación adicional de contraseña segura
+  if (!/[A-Z]/.test(newPassword)) {
+    throw new ValidationError('La contraseña debe contener al menos una letra mayúscula');
+  }
+
+  if (!/[0-9]/.test(newPassword)) {
+    throw new ValidationError('La contraseña debe contener al menos un número');
+  }
+
+  await authService.changePassword(userId, currentPassword, newPassword);
+  res.json({ success: true, message: 'Contraseña actualizada exitosamente' });
 });
 
-// Marcar una tarea como completada o pendiente
-router.patch('/:id/complete', authMiddleware, async (req, res) => {
-  try {
-    const taskId = req.params.id;
-    const { completed } = req.body;
-    
-    if (completed === undefined) {
-      return res.status(400).json({ message: "'completed' field is required" });
-    }
-    
-    const task = await taskService.toggleTaskCompletion(
-      taskId,
-      completed,
-      req.user.id
-    );
-    
-    res.json(task);
-  } catch (error) {
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({ message: error.message });
-    }
-    res.status(400).json({ message: error.message });
+/**
+ * @route POST /api/auth/refresh-token
+ * @desc Renueva el token de acceso usando refresh token
+ * @access Público (pero requiere refresh token válido)
+ */
+router.post('/refresh-token', async (req, res) => {
+  // Obtener refresh token de cookies o del cuerpo de la solicitud
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!refreshToken) {
+    throw new ValidationError('Refresh token es requerido');
   }
+
+  const result = await authService.refreshToken(refreshToken);
+
+  res.json({
+    accessToken: result.accessToken,
+    message: 'Token renovado exitosamente'
+  });
+});
+
+/**
+ * @route POST /api/auth/logout
+ * @desc Cierra sesión del usuario
+ * @access Privado
+ */
+router.post('/logout', authMiddleware, (req, res) => {
+  // Limpiar la cookie de refresh token
+  res.clearCookie('refreshToken');
+
+  // En un sistema real, aquí también se debería invalidar el token en el backend
+  // (añadirlo a una lista negra o similar)
+
+  res.json({
+    success: true,
+    message: 'Sesión cerrada exitosamente'
+  });
 });
 
 module.exports = router;

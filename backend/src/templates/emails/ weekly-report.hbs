@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4f46e5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9fafb;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .stat-box {
+            flex: 1;
+            padding: 15px;
+            margin: 0 5px;
+            border-radius: 8px;
+        }
+        .completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .pending {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        .overdue {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .stat-label {
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Tu Reporte Semanal</h1>
+        <p>{{weekStart}} - {{weekEnd}}</p>
+    </div>
+    <div class="content">
+        <p>Hola {{name}},</p>
+        <p>Aquí está tu resumen semanal de actividades en TaskMaster:</p>
+
+        <div class="stats-container">
+            <div class="stat-box completed">
+                <div class="stat-number">{{completed}}</div>
+                <div class="stat-label">Completadas</div>
+            </div>
+            <div class="stat-box pending">
+                <div class="stat-number">{{pending}}</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+            <div class="stat-box overdue">
+                <div class="stat-number">{{overdue}}</div>
+                <div class="stat-label">Vencidas</div>
+            </div>
+        </div>
+
+        {{#if completed}}
+            <p>¡Excelente trabajo completando {{completed}} tareas esta semana!</p>
+        {{else}}
+            <p>No has completado ninguna tarea esta semana. ¡Ánimo para la próxima!</p>
+        {{/if}}
+
+        {{#if overdue}}
+            <p>Tienes {{overdue}} tareas vencidas. Te recomendamos revisarlas pronto.</p>
+        {{/if}}
+
+        <p>Recuerda planificar tu próxima semana para aumentar tu productividad.</p>
+
+        <div style="text-align: center;">
+            <a href="{{dashboardUrl}}" class="button">Ver Mi Tablero</a>
+        </div>
+    </div>
+    <div class="footer">
+        <p>&copy; {{year}} TaskMaster. Todos los derechos reservados.</p>
+        <p>Puedes configurar tus preferencias de informes semanales en tu perfil de usuario.</p>
+    </div>
+</div>
+</body>
+</html>

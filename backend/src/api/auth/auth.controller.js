@@ -6,109 +6,168 @@ const router = express.Router();
 const { AuthService } = require('../../services/auth.service');
 const { UserRepository } = require('../../infrastructure/repositories/user.repository');
 const { authMiddleware } = require('../../infrastructure/middlewares/auth.middleware');
+const { convertToAppError } = require('../../utils/errors/error-converter');
 
 // Crear instancias de repositorio y servicio
 const userRepository = new UserRepository();
 const authService = new AuthService(userRepository);
 
-// Registro de nuevo usuario
-router.post('/register', async (req, res) => {
+/**
+ * @route POST /auth/register
+ * @description Registra un nuevo usuario
+ */
+router.post('/register', async (req, res, next) => {
   try {
     const { email, password, name } = req.body;
-    
-    // Validaciones básicas
+
+    // Validaciones básicas (estas podrían moverse a un middleware separado)
     if (!email || !password || !name) {
       return res.status(400).json({
-        message: 'Email, password and name are required'
+        status: 'error',
+        code: 'VALIDATION_ERROR',
+        message: 'Email, password y nombre son requeridos'
       });
     }
-    
+
     const result = await authService.register({ email, password, name });
-    
-    res.status(201).json(result);
+
+    res.status(201).json({
+      status: 'success',
+      data: result
+    });
   } catch (error) {
-    if (error.message.includes('already registered')) {
-      return res.status(409).json({ message: error.message });
-    }
-    res.status(400).json({ message: error.message });
+    // Usar el sistema centralizado de manejo de errores
+    next(convertToAppError(error));
   }
 });
 
-// Inicio de sesión
-router.post('/login', async (req, res) => {
+/**
+ * @route POST /auth/login
+ * @description Inicia sesión de usuario
+ */
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    
+
     // Validaciones básicas
     if (!email || !password) {
       return res.status(400).json({
-        message: 'Email and password are required'
+        status: 'error',
+        code: 'VALIDATION_ERROR',
+        message: 'Email y contraseña son requeridos'
       });
     }
-    
+
     const result = await authService.login(email, password);
-    
-    res.json(result);
+
+    res.json({
+      status: 'success',
+      data: result
+    });
   } catch (error) {
-    // Mismo código de error para credenciales incorrectas o cuenta deshabilitada
-    // por razones de seguridad
-    res.status(401).json({ message: error.message });
+    next(convertToAppError(error));
   }
 });
 
-// Obtener perfil del usuario autenticado
-router.get('/me', authMiddleware, async (req, res) => {
+/**
+ * @route GET /auth/me
+ * @description Obtiene el perfil del usuario autenticado
+ */
+router.get('/me', authMiddleware, async (req, res, next) => {
   try {
     const user = await authService.getUserById(req.user.id);
-    res.json(user);
+
+    res.json({
+      status: 'success',
+      data: user
+    });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    next(convertToAppError(error));
   }
 });
 
-// Actualizar perfil de usuario
-router.put('/me', authMiddleware, async (req, res) => {
+/**
+ * @route PUT /auth/me
+ * @description Actualiza el perfil de usuario
+ */
+router.put('/me', authMiddleware, async (req, res, next) => {
   try {
     const { name, email } = req.body;
     const updates = {};
-    
+
     if (name) updates.name = name;
     if (email) updates.email = email;
-    
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
-        message: 'At least one field to update is required'
+        status: 'error',
+        code: 'VALIDATION_ERROR',
+        message: 'Se requiere al menos un campo para actualizar'
       });
     }
-    
+
     const user = await authService.updateUser(req.user.id, updates);
-    res.json(user);
+
+    res.json({
+      status: 'success',
+      data: user
+    });
   } catch (error) {
-    if (error.message.includes('already in use')) {
-      return res.status(409).json({ message: error.message });
-    }
-    res.status(400).json({ message: error.message });
+    next(convertToAppError(error));
   }
 });
 
-// Cambiar contraseña
-router.post('/change-password', authMiddleware, async (req, res) => {
+/**
+ * @route POST /auth/change-password
+ * @description Cambia la contraseña del usuario
+ */
+router.post('/change-password', authMiddleware, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
-        message: 'Current password and new password are required'
+        status: 'error',
+        code: 'VALIDATION_ERROR',
+        message: 'Se requiere la contraseña actual y la nueva'
       });
     }
-    
+
     await authService.changePassword(req.user.id, currentPassword, newPassword);
-    res.json({ message: 'Password changed successfully' });
+
+    res.json({
+      status: 'success',
+      message: 'Contraseña cambiada correctamente'
+    });
   } catch (error) {
-    if (error.message.includes('incorrect')) {
-      return res.status(401).json({ message: error.message });
+    next(convertToAppError(error));
+  }
+});
+
+/**
+ * @route POST /auth/refresh-token
+ * @description Renueva el token de acceso usando el token de refresco
+ */
+router.post('/refresh-token', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        status: 'error',
+        code: 'VALIDATION_ERROR',
+        message: 'Token de refresco requerido'
+      });
     }
-    res.status(400).json({ message: error.message });
+
+    const result = await authService.refreshToken(refreshToken);
+
+    res.json({
+      status: 'success',
+      data: result
+    });
+  } catch (error) {
+    next(convertToAppError(error));
   }
 });
 
