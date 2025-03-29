@@ -9,8 +9,6 @@ const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 const handlebars = require('handlebars');
-// --- CORRECCIÓN DE IMPORTACIÓN ---
-// Extrae específicamente la clase AppError del objeto exportado
 const { AppError } = require('../utils/errors/app-error');
 
 /**
@@ -21,6 +19,26 @@ const isProduction = () => {
     const env = process.env.NODE_ENV || 'development';
     return env === 'production';
 };
+
+// Registrar helpers personalizados de Handlebars
+handlebars.registerHelper('eq', function (a, b) {
+    return a === b;
+});
+
+handlebars.registerHelper('formatDate', function (date) {
+    if (!date) return '';
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return date;
+    
+    // Formatea la fecha como "día/mes/año hora:minutos"
+    return dateObj.toLocaleString('es', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+});
 
 class EmailService {
     constructor() {
@@ -61,7 +79,6 @@ class EmailService {
             this.initialized = true;
         } catch (error) {
             console.error('Error al inicializar servicio de email:', error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError('No se pudo inicializar el servicio de email', 500);
         }
     }
@@ -85,7 +102,6 @@ class EmailService {
             console.log('Cuenta de prueba para emails creada:', testAccount.user);
         } catch (error) {
             console.error('Error al crear cuenta de prueba para emails:', error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError('No se pudo crear cuenta de prueba para emails', 500);
         }
     }
@@ -114,7 +130,6 @@ class EmailService {
             return template;
         } catch (error) {
             console.error(`Error al cargar plantilla ${templateName}:`, error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError(`No se pudo cargar la plantilla ${templateName}`, 500);
         }
     }
@@ -125,7 +140,6 @@ class EmailService {
      * @returns {string} - Texto plano
      */
     htmlToText(html) {
-        // (El contenido de esta función está bien)
         return html
             .replace(/<style[^>]*>.*?<\/style>/gs, '')
             .replace(/<script[^>]*>.*?<\/script>/gs, '')
@@ -183,13 +197,15 @@ class EmailService {
                 throw error;
             }
             // Si es otro tipo de error, envolverlo en un AppError.
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError(`Error al enviar email: ${error.message || error}`, 500);
         }
     }
 
-    // --- Los métodos sendWelcomeEmail, sendPasswordResetEmail, etc., están bien ---
-    // porque llaman a this.sendEmail, que ya maneja los errores correctamente.
+    /**
+     * Envía un email de bienvenida
+     * @param {Object} user - Usuario destinatario
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendWelcomeEmail(user) {
         return this.sendEmail({
             to: user.email,
@@ -202,6 +218,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un email para restablecer contraseña
+     * @param {Object} user - Usuario destinatario
+     * @param {string} token - Token de restablecimiento
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendPasswordResetEmail(user, token) {
         return this.sendEmail({
             to: user.email,
@@ -215,6 +237,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un recordatorio de tarea
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} task - Tarea a recordar
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendTaskReminderEmail(user, task) {
         return this.sendEmail({
             to: user.email,
@@ -230,6 +258,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un reporte semanal de tareas
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} stats - Estadísticas semanales
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendWeeklyReportEmail(user, stats) {
         // Asegúrate de que las fechas existan antes de llamar a toLocaleDateString
         const weekStartDateString = stats.weekStart ? stats.weekStart.toLocaleDateString() : 'N/A';
@@ -250,6 +284,67 @@ class EmailService {
             }
         });
     }
+
+    /**
+     * Envía un resumen de notificaciones
+     * @param {Object} user - Usuario destinatario
+     * @param {Array} notifications - Lista de notificaciones
+     * @param {Object} options - Opciones adicionales
+     * @returns {Promise<Object>} Información del envío
+     */
+    async sendNotificationDigestEmail(user, notifications, options = {}) {
+        const maxNotificationsInEmail = options.maxItems || 5;
+        const displayNotifications = notifications.slice(0, maxNotificationsInEmail);
+        const hasMoreNotifications = notifications.length > maxNotificationsInEmail;
+        const remainingCount = notifications.length - maxNotificationsInEmail;
+        
+        return this.sendEmail({
+            to: user.email,
+            subject: `Tienes ${notifications.length} notificaciones nuevas`,
+            template: 'notification-digest',
+            context: {
+                name: user.name,
+                notificationCount: notifications.length,
+                notifications: displayNotifications,
+                hasMoreNotifications,
+                remainingCount,
+                notificationsUrl: `${this.baseUrl}/notifications`
+            }
+        });
+    }
+    
+    /**
+     * Envía una notificación inmediata por email
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} notification - Datos de la notificación
+     * @returns {Promise<Object>} Información del envío
+     */
+    async sendImmediateNotificationEmail(user, notification) {
+        // Determinar el asunto según el tipo de notificación
+        let subject = 'Nueva notificación de TaskMaster';
+        
+        if (notification.type.startsWith('task.')) {
+            subject = `Notificación de tarea: ${notification.title}`;
+        } else if (notification.type.startsWith('user.')) {
+            subject = 'Notificación de usuario';
+        } else if (notification.type.startsWith('system.')) {
+            subject = 'Notificación del sistema';
+        }
+        
+        // Enviar un email que contiene una sola notificación
+        return this.sendEmail({
+            to: user.email,
+            subject,
+            template: 'notification-digest', // Usamos la misma plantilla
+            context: {
+                name: user.name,
+                notificationCount: 1,
+                notifications: [notification],
+                hasMoreNotifications: false,
+                notificationsUrl: `${this.baseUrl}/notifications`
+            }
+        });
+    }
 }
 
 // Exportar una instancia singleton
@@ -262,3 +357,7 @@ module.exports.sendWelcomeEmail = (user) => emailService.sendWelcomeEmail(user);
 module.exports.sendPasswordResetEmail = (user, token) => emailService.sendPasswordResetEmail(user, token);
 module.exports.sendTaskReminderEmail = (user, task) => emailService.sendTaskReminderEmail(user, task);
 module.exports.sendWeeklyReportEmail = (user, stats) => emailService.sendWeeklyReportEmail(user, stats);
+module.exports.sendNotificationDigestEmail = (user, notifications, options) => 
+    emailService.sendNotificationDigestEmail(user, notifications, options);
+module.exports.sendImmediateNotificationEmail = (user, notification) => 
+    emailService.sendImmediateNotificationEmail(user, notification);

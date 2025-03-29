@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Alerta de seguridad - Actividad sospechosa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #DC3545;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #e9f5fe;
+            border: 1px solid #cce5ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #DC3545;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ Alerta de seguridad</h1>
+        </div>
+        <div class="content">
+            <div class="alert-danger">
+                <h2>Actividad sospechosa detectada</h2>
+                <p>Hemos detectado un intento de inicio de sesión sospechoso en tu cuenta de TaskMaster.</p>
+            </div>
+            
+            <p>Hola {{name}},</p>
+            <p>Por tu seguridad, te notificamos que hemos detectado un intento de acceso a tu cuenta que consideramos sospechoso.</p>
+            
+            <div class="info-box">
+                <h3>Detalles del intento:</h3>
+                <ul>
+                    <li><strong>Dispositivo:</strong> {{device}}</li>
+                    <li><strong>Ubicación:</strong> {{location}}</li>
+                    <li><strong>Dirección IP:</strong> {{ip}}</li>
+                    <li><strong>Fecha y hora:</strong> {{formatDate time}}</li>
+                </ul>
+            </div>
+            
+            <p><strong>¿Fuiste tú?</strong></p>
+            <p>Si reconoces esta actividad, es posible que necesites iniciar sesión nuevamente.</p>
+            
+            <p><strong>¿No reconoces esta actividad?</strong></p>
+            <p>Si no fuiste tú, te recomendamos tomar las siguientes acciones inmediatamente:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{baseUrl}}/change-password" class="button">Cambiar tu contraseña ahora</a>
+            </div>
+            
+            <p>Acciones adicionales recomendadas:</p>
+            <ol>
+                <li>Revisar la actividad reciente en tu cuenta</li>
+                <li>Asegurarte de usar una contraseña fuerte y única</li>
+                <li>Habilitar la autenticación de dos factores si está disponible</li>
+            </ol>
+        </div>
+        <div class="footer">
+            <p>© {{year}} TaskMaster. Todos los derechos reservados.</p>
+            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>
