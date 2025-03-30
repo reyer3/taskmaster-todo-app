@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest",
+    "test": "jest --config=tests/jest.config.js",
+    "test:watch": "jest --config=tests/jest.config.js --watch",
+    "test:coverage": "jest --config=tests/jest.config.js --coverage",
+    "test:unit": "jest --config=tests/jest.config.js --testPathPattern=tests/unit",
+    "test:integration": "jest --config=tests/jest.config.js --testPathPattern=tests/integration",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prisma:generate": "prisma generate",

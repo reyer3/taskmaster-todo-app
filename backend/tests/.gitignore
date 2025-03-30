@@ -1,0 +1,5 @@
+# Ignorar reportes de cobertura
+coverage/
+
+# Ignorar archivos temporales
+*.tmp
