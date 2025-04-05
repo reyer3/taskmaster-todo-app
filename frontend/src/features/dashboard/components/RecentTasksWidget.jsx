@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getRecentTasks } from '../services/dashboard.service';
 
 /**
  * Widget que muestra las tareas más recientes
@@ -12,19 +13,10 @@ const RecentTasksWidget = ({ limit = 5 }) => {
     const loadRecentTasks = async () => {
       try {
         setIsLoading(true);
-        // Simulación de llamada a API
-        setTimeout(() => {
-          // Datos de ejemplo
-          const mockTasks = [
-            { id: 1, title: 'Completar informe mensual', status: 'pending', createdAt: '2023-04-02T10:30:00Z', priority: 'high' },
-            { id: 2, title: 'Reunión con equipo de diseño', status: 'completed', createdAt: '2023-04-01T14:00:00Z', priority: 'medium' },
-            { id: 3, title: 'Revisar propuesta de cliente', status: 'pending', createdAt: '2023-03-31T09:15:00Z', priority: 'high' },
-            { id: 4, title: 'Actualizar documentación', status: 'pending', createdAt: '2023-03-30T16:45:00Z', priority: 'low' },
-            { id: 5, title: 'Preparar presentación', status: 'completed', createdAt: '2023-03-29T11:20:00Z', priority: 'medium' },
-          ];
-          setTasks(mockTasks.slice(0, limit));
-          setIsLoading(false);
-        }, 800);
+        // Obtener tareas recientes del servicio
+        const recentTasks = await getRecentTasks(limit);
+        setTasks(recentTasks);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error cargando tareas recientes:', error);
         setIsLoading(false);

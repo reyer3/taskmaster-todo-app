@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import RecentTasksWidget from './RecentTasksWidget';
 import ActivityCalendar from './ActivityCalendar';
 import TaskFilter from './TaskFilter';
+import { getDashboardStats, searchTasks } from '../services/dashboard.service';
 
 /**
  * Página principal del dashboard
@@ -22,29 +23,20 @@ const DashboardPage = () => {
   const [filteredResults, setFilteredResults] = useState([]);
 
   useEffect(() => {
-    // Simulación de carga de datos del dashboard
+    // Carga de datos del dashboard utilizando el servicio
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
-        // Aquí iría la llamada a la API para obtener los datos del dashboard
-        // Por ahora usamos datos simulados
-        setTimeout(() => {
-          setStats({
-            totalTasks: 12,
-            completedTasks: 5,
-            pendingTasks: 7,
-            dueSoonTasks: 3
-          });
-          
-          // Simulación de resultados iniciales
-          setFilteredResults([
-            { id: 1, title: 'Completar informe mensual', status: 'pending', dueDate: '2023-04-10' },
-            { id: 2, title: 'Reunión con equipo de diseño', status: 'completed', dueDate: '2023-04-05' },
-            { id: 3, title: 'Revisar propuesta de cliente', status: 'pending', dueDate: '2023-04-12' }
-          ]);
-          
-          setIsLoading(false);
-        }, 1000);
+        
+        // Obtener estadísticas del dashboard
+        const dashboardStats = await getDashboardStats();
+        setStats(dashboardStats);
+        
+        // Cargar resultados iniciales (tareas recientes por defecto)
+        const initialResults = await searchTasks({ dateRange: 'month' });
+        setFilteredResults(initialResults.slice(0, 3)); // Mostrar solo las 3 primeras
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
         addToast({
@@ -59,16 +51,27 @@ const DashboardPage = () => {
     loadDashboardData();
   }, [addToast]);
 
-  const handleFilterChange = (filters) => {
-    console.log('Aplicando filtros:', filters);
-    
-    // Aquí iría la lógica para filtrar tareas según los criterios
-    // Por ahora solo mostramos una notificación
-    addToast({
-      type: 'info',
-      title: 'Filtros aplicados',
-      message: `Búsqueda: "${filters.searchQuery || 'ninguna'}" | Estado: ${filters.status || 'todos'} | Prioridad: ${filters.priority || 'todas'}`
-    });
+  const handleFilterChange = async (filters) => {
+    try {
+      console.log('Aplicando filtros:', filters);
+      
+      // Usar el servicio de búsqueda para obtener resultados filtrados
+      const results = await searchTasks(filters);
+      setFilteredResults(results);
+      
+      addToast({
+        type: 'info',
+        title: 'Filtros aplicados',
+        message: `Se encontraron ${results.length} resultados`
+      });
+    } catch (error) {
+      console.error('Error al aplicar filtros:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudieron aplicar los filtros'
+      });
+    }
   };
 
   if (isLoading) {

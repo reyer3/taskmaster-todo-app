@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getActivityData } from '../services/dashboard.service';
 
 /**
  * Widget de calendario de actividad
@@ -9,31 +10,19 @@ const ActivityCalendar = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    const loadActivityData = () => {
-      setIsLoading(true);
-      
-      // Simulación de carga de datos
-      setTimeout(() => {
-        // Generar datos de actividad para los últimos 30 días
-        const today = new Date();
-        const data = [];
+    const loadActivityData = async () => {
+      try {
+        setIsLoading(true);
         
-        for (let i = 29; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(today.getDate() - i);
-          
-          // Generar un número aleatorio de actividades (0-5)
-          const count = Math.floor(Math.random() * 6);
-          
-          data.push({
-            date: date.toISOString().split('T')[0],
-            count: count
-          });
-        }
-        
+        // Obtener datos de actividad del servicio
+        const data = await getActivityData(30); // Últimos 30 días
         setActivityData(data);
+        
         setIsLoading(false);
-      }, 800);
+      } catch (error) {
+        console.error('Error cargando datos de actividad:', error);
+        setIsLoading(false);
+      }
     };
     
     loadActivityData();
