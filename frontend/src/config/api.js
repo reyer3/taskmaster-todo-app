@@ -11,11 +11,8 @@ export const API_BASE_URL = import.meta.env.MODE === 'production'
 // Para obtener directamente de variables de entorno de Vite si están definidas
 export const API_URL_ENV = import.meta.env.VITE_API_URL;
 
-// Versión de la API
-export const API_VERSION = 'v1';
-
 // URL completa base - usando variables de entorno de Vite si están disponibles
-export const API_URL = import.meta.env.VITE_API_URL || `${API_BASE_URL}/${API_VERSION}`;
+export const API_URL = import.meta.env.VITE_API_URL || API_BASE_URL;
 
 // Timeout para las peticiones (en milisegundos)
 export const API_TIMEOUT = 15000;
