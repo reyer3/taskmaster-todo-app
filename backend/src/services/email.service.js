@@ -61,7 +61,6 @@ class EmailService {
             this.initialized = true;
         } catch (error) {
             console.error('Error al inicializar servicio de email:', error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError('No se pudo inicializar el servicio de email', 500);
         }
     }
@@ -85,7 +84,6 @@ class EmailService {
             console.log('Cuenta de prueba para emails creada:', testAccount.user);
         } catch (error) {
             console.error('Error al crear cuenta de prueba para emails:', error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError('No se pudo crear cuenta de prueba para emails', 500);
         }
     }
@@ -114,7 +112,6 @@ class EmailService {
             return template;
         } catch (error) {
             console.error(`Error al cargar plantilla ${templateName}:`, error);
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError(`No se pudo cargar la plantilla ${templateName}`, 500);
         }
     }
@@ -183,7 +180,6 @@ class EmailService {
                 throw error;
             }
             // Si es otro tipo de error, envolverlo en un AppError.
-            // --- CORRECCIÓN: Añadir 'new' ---
             throw new AppError(`Error al enviar email: ${error.message || error}`, 500);
         }
     }
@@ -250,15 +246,59 @@ class EmailService {
             }
         });
     }
+
+    /**
+     * Envía un resumen de notificaciones al usuario
+     * @param {Object} user - Usuario destinatario
+     * @param {Array} notifications - Lista de notificaciones
+     * @param {Object} options - Opciones adicionales
+     * @returns {Promise<object>} Información del envío
+     */
+    async sendNotificationDigestEmail(user, notifications, options = {}) {
+        const { maxItems = 5 } = options;
+        
+        const limitedNotifications = notifications.slice(0, maxItems);
+        const hasMore = notifications.length > maxItems;
+        const remainingCount = hasMore ? notifications.length - maxItems : 0;
+        
+        return this.sendEmail({
+            to: user.email,
+            subject: `Tienes ${notifications.length} notificaciones nuevas`,
+            template: 'notification-digest',
+            context: {
+                name: user.name,
+                notificationCount: notifications.length,
+                notifications: limitedNotifications,
+                hasMoreNotifications: hasMore,
+                remainingCount: remainingCount,
+                notificationsUrl: `${this.baseUrl}/notifications`
+            }
+        });
+    }
+
+    /**
+     * Envía una notificación inmediata al usuario
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} notification - Notificación a enviar
+     * @returns {Promise<object>} Información del envío
+     */
+    async sendImmediateNotificationEmail(user, notification) {
+        return this.sendEmail({
+            to: user.email,
+            subject: `Notificación de tarea: ${notification.title}`,
+            template: 'notification-digest',
+            context: {
+                name: user.name,
+                notificationCount: 1,
+                notifications: [notification],
+                hasMoreNotifications: false
+            }
+        });
+    }
 }
 
 // Exportar una instancia singleton
 const emailService = new EmailService();
 
+// Exportar solo la instancia singleton
 module.exports = emailService;
-
-// Para asegurar que los métodos se consideren utilizados, exportamos también métodos individuales
-module.exports.sendWelcomeEmail = (user) => emailService.sendWelcomeEmail(user);
-module.exports.sendPasswordResetEmail = (user, token) => emailService.sendPasswordResetEmail(user, token);
-module.exports.sendTaskReminderEmail = (user, task) => emailService.sendTaskReminderEmail(user, task);
-module.exports.sendWeeklyReportEmail = (user, stats) => emailService.sendWeeklyReportEmail(user, stats);
