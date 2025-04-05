@@ -97,6 +97,24 @@ const TaskForm = ({
         dueDate: null
       }));
     }
+
+    // Si se seleccionó una fecha, hacer scroll al siguiente campo
+    if (date) {
+      setTimeout(() => {
+        // Intentar enfocar el siguiente campo (etiquetas)
+        const tagsField = document.getElementById('tags');
+        if (tagsField) {
+          // Solo hacer scroll, no enfocar para evitar que se abra el teclado en móviles
+          const rect = tagsField.getBoundingClientRect();
+          if (rect.top > window.innerHeight * 0.7) {
+            window.scrollTo({
+              top: window.scrollY + (rect.top - window.innerHeight * 0.5),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }, 50);
+    }
   };
   
   // Validar el formulario
@@ -295,9 +313,45 @@ const TaskForm = ({
               scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
-              popperPlacement="bottom-start"
-              shouldCloseOnSelect={true}
+              popperPlacement="auto"
+              autoComplete="off"
+              onCalendarOpen={() => {
+                // Forzar posicionamiento inteligente del calendario
+                setTimeout(() => {
+                  const input = document.getElementById('dueDate');
+                  const calendar = document.querySelector('.react-datepicker');
+                  if (input && calendar) {
+                    const inputRect = input.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - inputRect.bottom;
+                    const spaceAbove = inputRect.top;
+                    
+                    // Si hay poco espacio abajo, posicionar arriba
+                    if (spaceBelow < 300 && spaceAbove > 300) {
+                      // Scroll para ver bien el calendario si se abre hacia arriba
+                      window.scrollTo({
+                        top: window.scrollY - 100,
+                        behavior: 'smooth'
+                      });
+                    } else {
+                      // Scroll para ver bien el calendario si está abajo
+                      const calendarRect = calendar.getBoundingClientRect();
+                      if (calendarRect.bottom > window.innerHeight) {
+                        window.scrollTo({
+                          top: window.scrollY + 100,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }
+                  }
+                }, 10);
+              }}
               popperModifiers={[
+                {
+                  name: "flip",
+                  options: {
+                    fallbackPlacements: ['top-start', 'bottom-start', 'top-end', 'bottom-end'],
+                  },
+                },
                 {
                   name: "offset",
                   options: {
@@ -312,9 +366,10 @@ const TaskForm = ({
                   },
                 },
               ]}
+              shouldCloseOnSelect={true}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base"
+              calendarClassName="shadow-xl border-0 text-base calendar-compact"
               fixedHeight
               renderCustomHeader={({
                 date,

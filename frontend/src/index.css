@@ -240,6 +240,49 @@
   font-size: 0.95rem !important;
 }
 
+/* Versión compacta del calendario */
+.calendar-compact .react-datepicker__month-container {
+  width: auto !important;
+  min-width: 280px !important;
+}
+
+.calendar-compact .react-datepicker__day {
+  margin: 0.15rem !important;
+  padding: 0.15rem !important;
+  height: 1.8rem !important;
+  width: 1.8rem !important;
+  line-height: 1.5rem !important;
+}
+
+.calendar-compact .react-datepicker__day-name {
+  margin: 0.15rem !important;
+  width: 1.8rem !important;
+}
+
+.calendar-compact .react-datepicker__header {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.calendar-compact .datepicker-custom-header {
+  padding: 8px 10px !important;
+}
+
+/* Posicionamiento inteligente para evitar scroll */
+.react-datepicker-popper {
+  z-index: 1000 !important; 
+}
+
+/* Posiciona arriba cuando está cerca del final */
+.react-datepicker-popper[data-placement^="top"] {
+  margin-bottom: 10px !important;
+}
+
+/* Posiciona abajo cuando hay espacio */
+.react-datepicker-popper[data-placement^="bottom"] {
+  margin-top: 10px !important;
+}
+
 .react-datepicker__header {
   background-color: rgb(var(--primary)) !important;
   border-bottom: none !important;
