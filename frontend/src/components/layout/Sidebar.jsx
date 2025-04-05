@@ -23,18 +23,24 @@ const getSavedSidebarState = () => {
 /**
  * Componente de barra lateral con navegación principal
  * Incluye enlaces a las secciones principales y accesos rápidos
+ * @param {Object} props Propiedades del componente
+ * @param {Function} props.onToggleCollapse Función a llamar cuando cambia el estado colapsado
  */
-const Sidebar = () => {
+const Sidebar = ({ onToggleCollapse }) => {
   const { isAuthenticated } = useAuth();
   const { isPublicRoute } = useLayout();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(getSavedSidebarState());
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Efecto para guardar el estado cuando cambia
+  // Efecto para guardar el estado cuando cambia y notificar al componente padre
   useEffect(() => {
     saveSidebarState(collapsed);
-  }, [collapsed]);
+    // Notificar al Layout del cambio de estado si se proporciona la función
+    if (onToggleCollapse) {
+      onToggleCollapse(collapsed);
+    }
+  }, [collapsed, onToggleCollapse]);
 
   // Cierra la navegación móvil cuando cambia la ruta
   useEffect(() => {
