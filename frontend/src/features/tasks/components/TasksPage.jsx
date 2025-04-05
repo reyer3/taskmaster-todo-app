@@ -406,6 +406,7 @@ const TasksPage = () => {
         isOpen={showCreateModal} 
         onClose={handleCancel}
         title="Crear nueva tarea"
+        size="lg"
       >
         <TaskForm 
           onSubmit={handleCreateTask}
@@ -420,6 +421,7 @@ const TasksPage = () => {
         isOpen={showEditModal} 
         onClose={handleCancel}
         title="Editar tarea"
+        size="lg"
       >
         <TaskForm 
           task={selectedTask}
@@ -435,6 +437,7 @@ const TasksPage = () => {
         isOpen={showDeleteModal} 
         onClose={handleCancel}
         title="Eliminar tarea"
+        size="md"
       >
         <div className="p-6">
           <p className="mb-6 text-gray-700 dark:text-dark-text-secondary">

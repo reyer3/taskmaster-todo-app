@@ -110,7 +110,7 @@ const TaskForm = ({
   };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* Título */}
       <div>
         <label 
@@ -125,7 +125,7 @@ const TaskForm = ({
           name="title"
           value={formData.title}
           onChange={handleChange}
-          className={`block w-full border ${errors.title ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
+          className={`block w-full border ${errors.title ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
           placeholder="Nombre de la tarea"
           disabled={loading}
         />
@@ -146,14 +146,14 @@ const TaskForm = ({
           value={formData.description}
           onChange={handleChange}
           rows="3"
-          className={`block w-full border ${errors.description ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
+          className={`block w-full border ${errors.description ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
           placeholder="Describe la tarea con más detalle"
           disabled={loading}
         />
         {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
         {/* Categoría */}
         <div>
           <label 
@@ -167,7 +167,7 @@ const TaskForm = ({
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
+            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
             disabled={loading}
           >
             {categories.map(category => (
@@ -191,7 +191,7 @@ const TaskForm = ({
             name="priority"
             value={formData.priority}
             onChange={handleChange}
-            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
+            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
             disabled={loading}
           >
             {priorities.map(priority => (
@@ -203,9 +203,7 @@ const TaskForm = ({
             ))}
           </select>
         </div>
-      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Fecha de vencimiento */}
         <div>
           <label 
@@ -220,7 +218,7 @@ const TaskForm = ({
             name="dueDate"
             value={formData.dueDate}
             onChange={handleChange}
-            className={`block w-full border ${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
+            className={`block w-full border ${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
             disabled={loading}
           />
           {errors.dueDate && <p className="mt-1 text-sm text-red-500">{errors.dueDate}</p>}
@@ -240,7 +238,7 @@ const TaskForm = ({
             name="tags"
             value={formData.tags}
             onChange={handleChange}
-            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
+            className="block w-full border border-gray-300 dark:border-dark-border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
             placeholder="ej: personal, trabajo, urgente"
             disabled={loading}
           />
@@ -248,7 +246,7 @@ const TaskForm = ({
       </div>
       
       {/* Estado completado */}
-      <div className="flex items-center">
+      <div className="flex items-center my-2">
         <input 
           type="checkbox"
           id="completed"
@@ -266,8 +264,8 @@ const TaskForm = ({
         </label>
       </div>
       
-      {/* Botones */}
-      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-border">
+      {/* Botones de acción */}
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-border mt-4">
         <button
           type="button"
           onClick={onCancel}
@@ -278,13 +276,13 @@ const TaskForm = ({
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md transition-colors flex items-center"
           disabled={loading}
         >
           {loading ? (
             <>
               <span className="animate-spin h-4 w-4 mr-2 border-t-2 border-white rounded-full"></span>
-              Guardando...
+              {task ? 'Actualizando...' : 'Creando...'}
             </>
           ) : (
             task ? 'Actualizar tarea' : 'Crear tarea'
@@ -296,16 +294,7 @@ const TaskForm = ({
 };
 
 TaskForm.propTypes = {
-  task: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    title: PropTypes.string,
-    description: PropTypes.string,
-    category: PropTypes.string,
-    priority: PropTypes.string,
-    dueDate: PropTypes.string,
-    tags: PropTypes.arrayOf(PropTypes.string),
-    completed: PropTypes.bool
-  }),
+  task: PropTypes.object,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   categories: PropTypes.arrayOf(PropTypes.string),

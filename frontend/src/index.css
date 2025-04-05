@@ -15,6 +15,8 @@
     --header-height: 64px;     /* altura del header */
     --background-light: #f5f7ff;
     --background-dark: #111827;
+    --modal-background: rgba(0, 0, 0, 0.5);
+    --transition-duration: 0.3s;
   }
 
   body {
@@ -115,6 +117,28 @@
   .page-title {
     @apply text-2xl font-bold mb-6 text-slate-900 dark:text-dark-text-primary;
   }
+
+  /* Estilos para modales */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-auto animate-fadeIn;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-container {
+    @apply bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl w-full max-w-xl animate-zoomIn;
+  }
+
+  .modal-header {
+    @apply flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border sticky top-0 bg-white dark:bg-dark-bg-secondary z-10 rounded-t-lg;
+  }
+
+  .modal-body {
+    @apply px-6 py-5;
+  }
+
+  .modal-footer {
+    @apply flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-dark-border;
+  }
 }
 
 /* Animaciones */
@@ -124,6 +148,10 @@
 
 .slide-in {
   animation: slideIn 0.3s ease-in-out;
+}
+
+.zoom-in {
+  animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes fadeIn {
@@ -146,6 +174,26 @@
   }
 }
 
+@keyframes zoomIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Utilidades personalizadas */
 @layer utilities {
   .animate-fade-in {
@@ -155,4 +203,25 @@
   .animate-slide-in {
     animation: slideIn 0.3s ease-in-out;
   }
+  
+  .animate-zoom-in {
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .animate-spin-slow {
+    animation: spin 1.5s linear infinite;
+  }
+}
+
+/* Transiciones suaves */
+.transition-fast {
+  transition: all 0.15s ease-in-out;
+}
+
+.transition-medium {
+  transition: all 0.3s ease-in-out;
+}
+
+.transition-slow {
+  transition: all 0.5s ease-in-out;
 }

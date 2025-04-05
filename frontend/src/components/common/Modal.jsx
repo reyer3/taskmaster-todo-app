@@ -11,9 +11,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   // Determinar clases de tamaño
   const sizeClasses = {
     sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
+    md: 'max-w-xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl'
   };
   
   // Manejar cierre con la tecla Escape
@@ -56,18 +56,18 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   // Crear portal para renderizar el modal fuera de la jerarquía de componentes
   return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black bg-opacity-50 transition-opacity animate-fadeIn overflow-auto"
       onClick={handleBackdropClick}
       aria-modal="true"
       role="dialog"
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl w-full ${sizeClasses[size] || sizeClasses.md} transform transition-all animate-slideIn`}
+        className={`bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl w-full ${sizeClasses[size] || sizeClasses.md} transform transition-all animate-slideIn my-6 md:my-10 max-h-[calc(100vh-4rem)] flex flex-col`}
         role="document"
       >
         {/* Encabezado del modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-dark-border sticky top-0 bg-white dark:bg-dark-bg-secondary z-10 rounded-t-lg">
           <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text-primary">
             {title}
           </h3>
@@ -84,7 +84,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
         </div>
         
         {/* Contenido del modal */}
-        <div className="overflow-y-auto max-h-[calc(100vh-14rem)]">
+        <div className="overflow-y-auto px-6 py-5 flex-grow">
           {children}
         </div>
       </div>
