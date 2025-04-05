@@ -235,11 +235,15 @@
   font-family: inherit !important;
   border-color: #e5e7eb !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 8px !important;
+  overflow: hidden;
 }
 
 .react-datepicker__header {
   background-color: rgb(var(--primary)) !important;
   border-bottom: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
 }
 
 .react-datepicker__current-month, 
@@ -252,6 +256,8 @@
 .react-datepicker__day--keyboard-selected {
   background-color: rgb(var(--primary)) !important;
   border-radius: 50% !important;
+  color: white !important;
+  font-weight: bold;
 }
 
 .react-datepicker__day:hover {
@@ -263,6 +269,7 @@
   color: white !important;
   border-top: none !important;
   font-weight: bold;
+  padding: 10px !important;
 }
 
 /* Estilos para modo oscuro */
@@ -304,7 +311,7 @@
   border: 1px solid #e5e7eb;
   max-height: 220px;
   overflow-y: auto;
-  z-index: 20;
+  z-index: 30;
 }
 
 .dark .react-datepicker__year-dropdown,
@@ -335,18 +342,61 @@
   font-weight: bold;
   padding-top: 8px;
   padding-bottom: 8px;
-  background-color: rgb(var(--primary));
+  color: white !important;
 }
 
 /* Mejorar los controles de navegación */
 .react-datepicker__navigation {
-  top: 12px;
+  top: 15px;
 }
 
-/* Animación para el calendario */
+/* Posicionamiento del calendario */
 .react-datepicker-popper {
   animation: datepickerFadeIn 0.2s ease-out;
-  z-index: 50 !important;
+  z-index: 99 !important;
+  margin-top: 8px !important;
+  position: absolute !important;
+}
+
+/* Personalización del encabezado */
+.datepicker-custom-header {
+  background-color: rgb(var(--primary));
+  color: white;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.datepicker-custom-header button {
+  color: white;
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.datepicker-custom-header button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.datepicker-custom-header select {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 0 4px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-position: right 4px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: 24px;
 }
 
 @keyframes datepickerFadeIn {

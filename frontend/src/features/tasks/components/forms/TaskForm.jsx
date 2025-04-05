@@ -295,12 +295,12 @@ const TaskForm = ({
               scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
-              popperPlacement="bottom-start"
+              popperPlacement="auto"
               popperModifiers={[
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 8],
+                    offset: [0, 10],
                   },
                 },
                 {
@@ -309,12 +309,13 @@ const TaskForm = ({
                     rootBoundary: "viewport",
                     tether: false,
                     altAxis: true,
+                    padding: 8,
                   },
                 },
               ]}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-lg border border-gray-200 dark:border-gray-700"
+              calendarClassName="shadow-lg border-0"
               renderCustomHeader={({
                 date,
                 changeYear,
@@ -324,9 +325,9 @@ const TaskForm = ({
                 prevMonthButtonDisabled,
                 nextMonthButtonDisabled,
               }) => (
-                <div className="flex items-center justify-between px-2 py-2">
+                <div className="datepicker-custom-header">
                   <button 
-                    className="p-1 text-gray-700 hover:text-primary dark:text-gray-300 disabled:opacity-50" 
+                    className="flex items-center justify-center" 
                     onClick={decreaseMonth} 
                     disabled={prevMonthButtonDisabled}
                   >
@@ -334,32 +335,33 @@ const TaskForm = ({
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1">
                     <select
-                      className="bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded py-1 text-sm pl-2 pr-6 appearance-none focus:outline-none"
                       value={date.getMonth()}
                       onChange={({ target: { value } }) => changeMonth(Number(value))}
                     >
                       {Array.from({ length: 12 }, (_, i) => (
                         <option key={i} value={i}>
-                          {date.toLocaleString('es', { month: 'long' })}
+                          {new Date(date.getFullYear(), i).toLocaleString('es', { month: 'long' })}
                         </option>
                       ))}
                     </select>
                     <select
-                      className="bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded py-1 text-sm pl-2 pr-6 appearance-none focus:outline-none"
                       value={date.getFullYear()}
                       onChange={({ target: { value } }) => changeYear(Number(value))}
                     >
-                      {Array.from({ length: 10 }, (_, i) => (
-                        <option key={i} value={new Date().getFullYear() + i}>
-                          {new Date().getFullYear() + i}
-                        </option>
-                      ))}
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const year = new Date().getFullYear() + i;
+                        return (
+                          <option key={i} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <button 
-                    className="p-1 text-gray-700 hover:text-primary dark:text-gray-300 disabled:opacity-50" 
+                    className="flex items-center justify-center" 
                     onClick={increaseMonth} 
                     disabled={nextMonthButtonDisabled}
                   >
