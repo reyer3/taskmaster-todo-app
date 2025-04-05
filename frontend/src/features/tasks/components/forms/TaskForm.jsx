@@ -124,6 +124,17 @@ const TaskForm = ({
           if (datepickerContainer) {
             datepickerContainer.style.display = 'none';
           }
+          
+          // También eliminar overlay manualmente
+          const overlay = document.querySelector('.calendar-overlay');
+          if (overlay) {
+            overlay.style.opacity = "0";
+            setTimeout(() => {
+              if (overlay.parentNode) {
+                document.body.removeChild(overlay);
+              }
+            }, 200);
+          }
         }
         
         // Intentar enfocar el siguiente campo (etiquetas)
@@ -379,9 +390,25 @@ const TaskForm = ({
                   if (input) {
                     input.click(); // Simular clic para cerrar el datepicker
                   }
+                  // Eliminar overlay inmediatamente al hacer clic fuera
+                  const overlay = document.querySelector('.calendar-overlay');
+                  if (overlay) {
+                    overlay.style.opacity = "0";
+                    setTimeout(() => {
+                      if (overlay.parentNode) {
+                        document.body.removeChild(overlay);
+                      }
+                    }, 200);
+                  }
                 }
               }}
               onCalendarOpen={() => {
+                // Limpiar cualquier overlay anterior por si acaso
+                const existingOverlay = document.querySelector('.calendar-overlay');
+                if (existingOverlay && existingOverlay.parentNode) {
+                  document.body.removeChild(existingOverlay);
+                }
+                
                 // Crear overlay para poder cerrar al hacer clic en el fondo
                 const overlay = document.createElement('div');
                 overlay.className = 'calendar-overlay';
@@ -466,10 +493,15 @@ const TaskForm = ({
                 }, 10);
               }}
               onCalendarClose={() => {
-                // Eliminar overlay cuando se cierra el calendario
+                // Eliminar overlay cuando se cierra el calendario con una animación suave
                 const overlay = document.querySelector('.calendar-overlay');
                 if (overlay) {
-                  document.body.removeChild(overlay);
+                  overlay.style.opacity = "0";
+                  setTimeout(() => {
+                    if (overlay.parentNode) {
+                      document.body.removeChild(overlay);
+                    }
+                  }, 200);
                 }
                 
                 // Remover event listeners cuando se cierra
