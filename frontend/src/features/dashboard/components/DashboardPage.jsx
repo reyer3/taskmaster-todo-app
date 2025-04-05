@@ -3,7 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../context/ToastContext';
 import RecentTasksWidget from './RecentTasksWidget';
 import ActivityCalendar from './ActivityCalendar';
-import { getDashboardStats, searchTasks } from '../services/dashboard.service';
+import { getDashboardStats } from '../services/dashboard.service';
 
 /**
  * Página principal del dashboard
@@ -19,7 +19,6 @@ const DashboardPage = () => {
     dueSoonTasks: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [recentTasks, setRecentTasks] = useState([]);
 
   // Cargar datos iniciales del dashboard
   useEffect(() => {
@@ -30,10 +29,6 @@ const DashboardPage = () => {
         // Obtener estadísticas del dashboard
         const dashboardStats = await getDashboardStats();
         setStats(dashboardStats);
-        
-        // Cargar tareas recientes
-        const initialResults = await searchTasks({ dateRange: 'month' });
-        setRecentTasks(initialResults.slice(0, 5));
         
         setIsLoading(false);
       } catch (error) {
@@ -94,59 +89,9 @@ const DashboardPage = () => {
       </div>
 
       {/* Contenedor para widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentTasksWidget limit={5} />
         <ActivityCalendar />
-      </div>
-
-      {/* Tareas recientes */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-            Tareas recientes
-          </h2>
-        </div>
-        
-        {recentTasks.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                  <th className="pb-2">Tarea</th>
-                  <th className="pb-2">Estado</th>
-                  <th className="pb-2">Fecha de vencimiento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTasks.map(task => (
-                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        task.status === 'completed' || task.completed
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
-                      }`}>
-                        {task.status === 'completed' || task.completed ? 'Completada' : 'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="py-3 text-gray-600 dark:text-gray-300">
-                      {task.dueDate 
-                        ? new Date(task.dueDate).toLocaleDateString('es-ES')
-                        : 'Sin fecha'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p className="mb-2 text-2xl">📋</p>
-            <p className="text-lg font-medium">No hay tareas recientes</p>
-            <p className="text-sm mt-2">Crea nuevas tareas para verlas aquí</p>
-          </div>
-        )}
       </div>
     </div>
   );
