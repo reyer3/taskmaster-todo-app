@@ -37,6 +37,11 @@ Aplicación de gestión de tareas con autenticación de usuarios desarrollada co
 
 Este proyecto implementa una arquitectura **DDD-Light** (Domain-Driven Design simplificado) que incorpora elementos de la **Arquitectura Limpia** (Clean Architecture) y el principio **Tell, Don't Ask**. Para más detalles, consulta nuestro [ADR-0002](./docs/architecture/decisions/0002-ddd-light-architecture.md).
 
+### Diagrama de Arquitectura
+![Diagrama de Arquitectura](./docs/architecture/architecture-diagram.png)
+
+En el diagrama se muestra la estructura completa de la aplicación, desde el frontend con React hasta las diferentes capas del backend y la infraestructura. Las flechas indican el flujo de información y las dependencias entre componentes.
+
 ## 🌿 Flujo de Trabajo Git (Git Flow)
 
 Utilizamos **Git Flow** como estrategia de branching, siguiendo nuestra [decisión arquitectónica documentada en ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md).
