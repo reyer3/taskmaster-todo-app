@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import RecentTasksWidget from './RecentTasksWidget';
 import ActivityCalendar from './ActivityCalendar';
 import { getDashboardStats } from '../services/dashboard.service';
+import { ClipboardList, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 /**
  * Página principal del dashboard
@@ -65,26 +66,30 @@ const DashboardPage = () => {
         <StatCard 
           title="Total de Tareas" 
           value={stats.totalTasks} 
-          icon="📋"
+          icon={<ClipboardList size={24} />}
           color="bg-blue-100 dark:bg-blue-900"
+          iconColor="text-blue-500 dark:text-blue-300"
         />
         <StatCard 
           title="Tareas Completadas" 
           value={stats.completedTasks} 
-          icon="✅"
+          icon={<CheckCircle size={24} />}
           color="bg-green-100 dark:bg-green-900"
+          iconColor="text-green-500 dark:text-green-300"
         />
         <StatCard 
           title="Tareas Pendientes" 
           value={stats.pendingTasks} 
-          icon="⏳"
+          icon={<Clock size={24} />}
           color="bg-yellow-100 dark:bg-yellow-900"
+          iconColor="text-yellow-500 dark:text-yellow-300"
         />
         <StatCard 
           title="Vencen Pronto" 
           value={stats.dueSoonTasks} 
-          icon="⏰"
+          icon={<AlertCircle size={24} />}
           color="bg-red-100 dark:bg-red-900"
+          iconColor="text-red-500 dark:text-red-300"
         />
       </div>
 
@@ -100,7 +105,7 @@ const DashboardPage = () => {
 /**
  * Tarjeta de estadísticas para el dashboard
  */
-const StatCard = ({ title, value, icon, color }) => {
+const StatCard = ({ title, value, icon, color, iconColor }) => {
   return (
     <div className={`${color} rounded-lg p-6 transition-all duration-300 hover:shadow-md`}>
       <div className="flex items-center justify-between">
@@ -112,7 +117,7 @@ const StatCard = ({ title, value, icon, color }) => {
             {value}
           </p>
         </div>
-        <div className="text-3xl">
+        <div className={`${iconColor}`}>
           {icon}
         </div>
       </div>
