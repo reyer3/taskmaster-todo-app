@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback } from 'react';
+import { createContext, useState, useCallback, useContext } from 'react';
 
 // Creación del contexto
 export const ToastContext = createContext();
@@ -52,19 +52,19 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   // Métodos específicos por tipo
-  const showSuccessToast = useCallback((message, duration) => {
+  const success = useCallback((message, duration) => {
     return showToast({ message, type: 'success', duration });
   }, [showToast]);
 
-  const showErrorToast = useCallback((message, duration) => {
+  const error = useCallback((message, duration) => {
     return showToast({ message, type: 'error', duration });
   }, [showToast]);
 
-  const showInfoToast = useCallback((message, duration) => {
+  const info = useCallback((message, duration) => {
     return showToast({ message, type: 'info', duration });
   }, [showToast]);
 
-  const showWarningToast = useCallback((message, duration) => {
+  const warning = useCallback((message, duration) => {
     return showToast({ message, type: 'warning', duration });
   }, [showToast]);
 
@@ -74,11 +74,23 @@ export const ToastProvider = ({ children }) => {
     showToast,
     removeToast,
     clearToasts,
-    showSuccessToast,
-    showErrorToast,
-    showInfoToast,
-    showWarningToast
+    success,
+    error,
+    info,
+    warning
   };
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+};
+
+/**
+ * Hook para utilizar el contexto de notificaciones toast
+ * @returns {Object} Funciones y estado de las notificaciones toast
+ */
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast debe usarse dentro de un ToastProvider');
+  }
+  return context;
 };

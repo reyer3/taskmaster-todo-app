@@ -5,7 +5,7 @@ import LoginPage from './features/auth/components/LoginPage';
 import RegisterPage from './features/auth/components/RegisterPage';
 import TasksPage from './features/tasks/components/TasksPage';
 import NotFoundPage from './components/NotFoundPage';
-import { useToast } from './hooks/useToast';
+import { useToast } from './context/ToastContext';
 import Toast from './components/common/Toast';
 
 /**
