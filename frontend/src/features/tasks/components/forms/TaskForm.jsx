@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { es } from 'date-fns/locale';
+import "react-datepicker/dist/react-datepicker.css";
+
+// Registrar el idioma español
+registerLocale('es', es);
 
 // Mapeo de prioridades para mostrar en español pero enviar en inglés al API
 const PRIORITY_MAP = {
@@ -49,7 +55,7 @@ const TaskForm = ({
       const formattedTask = {
         ...task,
         // Formatear la fecha si existe
-        dueDate: task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
+        dueDate: task.dueDate ? new Date(task.dueDate) : '',
         // Convertir el array de tags a string si existe
         tags: Array.isArray(task.tags) ? task.tags.join(', ') : ''
       };
@@ -77,6 +83,22 @@ const TaskForm = ({
     }
   };
   
+  // Manejar cambio de fecha
+  const handleDateChange = (date) => {
+    setFormData(prev => ({
+      ...prev,
+      dueDate: date
+    }));
+    
+    // Limpiar error del campo cuando cambia
+    if (errors.dueDate) {
+      setErrors(prev => ({
+        ...prev,
+        dueDate: null
+      }));
+    }
+  };
+  
   // Validar el formulario
   const validateForm = () => {
     const newErrors = {};
@@ -97,9 +119,19 @@ const TaskForm = ({
     
     // Validar fecha de vencimiento
     if (formData.dueDate) {
-      const dueDate = new Date(formData.dueDate);
-      if (isNaN(dueDate.getTime())) {
+      if (!(formData.dueDate instanceof Date) || isNaN(formData.dueDate.getTime())) {
         newErrors.dueDate = 'Fecha de vencimiento inválida';
+      }
+      
+      // Verificar que la fecha no sea en el pasado
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const selectedDate = new Date(formData.dueDate);
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        newErrors.dueDate = 'La fecha de vencimiento no puede ser en el pasado';
       }
     }
     
@@ -132,6 +164,9 @@ const TaskForm = ({
           const endOfDay = new Date(selectedDate);
           endOfDay.setHours(23, 59, 59, 999); // Final del día
           processedData.dueDate = endOfDay.toISOString();
+        } else {
+          // Asegurar que todas las fechas se envíen en formato ISO
+          processedData.dueDate = formData.dueDate.toISOString();
         }
       }
       
@@ -245,15 +280,24 @@ const TaskForm = ({
           >
             Fecha de vencimiento
           </label>
-          <input 
-            type="date"
-            id="dueDate"
-            name="dueDate"
-            value={formData.dueDate}
-            onChange={handleChange}
-            className={`block w-full border ${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary`}
-            disabled={loading}
-          />
+          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary`}>
+            <DatePicker
+              id="dueDate"
+              selected={formData.dueDate}
+              onChange={handleDateChange}
+              locale="es"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Selecciona una fecha"
+              minDate={new Date()}
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              todayButton="Hoy"
+              disabled={loading}
+              className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
+              calendarClassName="dark:bg-dark-bg-secondary dark:text-dark-text-primary"
+            />
+          </div>
           {errors.dueDate && <p className="mt-1 text-sm text-red-500">{errors.dueDate}</p>}
         </div>
         
