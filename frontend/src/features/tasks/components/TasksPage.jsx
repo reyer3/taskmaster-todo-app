@@ -6,6 +6,14 @@ import { TaskForm } from './forms';
 import Modal from '../../../components/common/Modal';
 import { getTasks, createTask, updateTask, deleteTask, markTaskAsCompleted, markTaskAsPending } from '../services/tasks.service';
 
+// Mapeo de prioridades para mostrar en español
+const PRIORITY_MAP = {
+  'none': 'Ninguna',
+  'low': 'Baja',
+  'medium': 'Media',
+  'high': 'Alta'
+};
+
 /**
  * Página principal de gestión de tareas
  * Permite crear, ver, editar, eliminar y organizar tareas
@@ -319,9 +327,10 @@ const TasksPage = () => {
               className="border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-primary rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todas</option>
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
-              <option value="baja">Baja</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+              <option value="none">Ninguna</option>
             </select>
           </div>
           
