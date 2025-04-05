@@ -18,6 +18,9 @@ const TaskFilter = ({ onFilterChange }) => {
   // Referencia para saber si es la primera renderización
   const isFirstRender = useRef(true);
   
+  // Control adicional para evitar búsquedas automáticas
+  const hasUserInteracted = useRef(false);
+  
   // Aplicar debounce al término de búsqueda para evitar peticiones innecesarias
   // Requiere al menos 2 caracteres para iniciar la búsqueda
   const debouncedSearchQuery = useDebounce(filters.searchQuery, 800, 2);
@@ -30,6 +33,12 @@ const TaskFilter = ({ onFilterChange }) => {
       return;
     }
     
+    // Solo realizar búsqueda si ha habido interacción del usuario
+    // o si el valor debounced ha cambiado explícitamente
+    if (!hasUserInteracted.current && debouncedSearchQuery === '') {
+      return;
+    }
+    
     // Solo aplicar filtros si hay un término de búsqueda válido o está completamente vacío
     if ((debouncedSearchQuery && debouncedSearchQuery.length >= 2) || debouncedSearchQuery === '') {
       if (onFilterChange) {
@@ -39,11 +48,14 @@ const TaskFilter = ({ onFilterChange }) => {
         });
       }
     }
-  }, [debouncedSearchQuery, filters]);
+  }, [debouncedSearchQuery]); // Eliminamos filters de las dependencias para evitar ciclos
   
   // Aplicar otros filtros (no el de búsqueda) cuando cambian
   useEffect(() => {
     if (isFirstRender.current) return;
+    
+    // Marcar que hubo interacción del usuario al cambiar filtros
+    hasUserInteracted.current = true;
     
     // Evitar aplicar la búsqueda aquí, ya que se maneja en el otro useEffect
     const { searchQuery, ...otherFilters } = filters;
@@ -55,6 +67,9 @@ const TaskFilter = ({ onFilterChange }) => {
   
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
+    
+    // Marcar que hubo interacción del usuario
+    hasUserInteracted.current = true;
     
     // Si es la búsqueda, solo actualizamos el estado local
     if (name === 'searchQuery') {
@@ -69,6 +84,10 @@ const TaskFilter = ({ onFilterChange }) => {
   
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    
+    // Marcar que hubo interacción del usuario
+    hasUserInteracted.current = true;
+    
     // Al enviar el formulario, aplicar los filtros inmediatamente si hay texto
     if (filters.searchQuery.trim().length > 0 && onFilterChange) {
       onFilterChange(filters);
@@ -76,6 +95,9 @@ const TaskFilter = ({ onFilterChange }) => {
   };
   
   const clearFilters = () => {
+    // Marcar que hubo interacción del usuario
+    hasUserInteracted.current = true;
+    
     const resetFilters = {
       searchQuery: '',
       status: '',

@@ -27,6 +27,7 @@ const DashboardPage = () => {
     resultCount: 0,
     timestamp: 0
   });
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   useEffect(() => {
     // Carga de datos del dashboard utilizando el servicio
@@ -38,11 +39,12 @@ const DashboardPage = () => {
         const dashboardStats = await getDashboardStats();
         setStats(dashboardStats);
         
-        // Cargar resultados iniciales (tareas recientes por defecto)
+        // Cargar tareas recientes pero sin aplicar filtros automáticos
         const initialResults = await searchTasks({ dateRange: 'month' });
         setFilteredResults(initialResults.slice(0, 3)); // Mostrar solo las 3 primeras
         
         setIsLoading(false);
+        setInitialDataLoaded(true);
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
         showError('No se pudieron cargar los datos del dashboard');
@@ -54,9 +56,18 @@ const DashboardPage = () => {
   }, [showError]);
 
   const handleFilterChange = async (filters) => {
+    // Ignorar cambios de filtro durante la carga inicial
+    if (!initialDataLoaded) {
+      return;
+    }
+    
     try {
-      // Guardar metadatos de búsqueda para UI
+      // No iniciar búsqueda con texto vacío en la carga inicial
       const searchTerm = filters.searchQuery || '';
+      if (!searchTerm && searchMeta.lastQuery === '' && !filters.status && !filters.priority && filters.dateRange === 'all') {
+        return; // Evitar búsqueda innecesaria al cargar la página
+      }
+      
       const startTime = Date.now();
       
       // Mostrar indicador visual durante la búsqueda
