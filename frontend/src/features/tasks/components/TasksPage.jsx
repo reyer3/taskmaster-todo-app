@@ -225,7 +225,7 @@ const TasksPage = () => {
       const updatedTask = await updateTask(taskData.id, taskData);
       
       // Actualizar lista de tareas
-      setTasks(tasks.map(task => 
+    setTasks(tasks.map(task => 
         task.id === updatedTask.id ? updatedTask : task
       ));
       
@@ -304,28 +304,28 @@ const TasksPage = () => {
       
       {/* Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div>
+          <div>
           <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-            Estado
-          </label>
-          <select
+              Estado
+            </label>
+            <select 
             id="status-filter"
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
             className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm p-2 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">Todas</option>
+            >
+              <option value="all">Todas</option>
             <option value="pending">Pendientes</option>
-            <option value="completed">Completadas</option>
-          </select>
-        </div>
-        
-        <div>
+              <option value="completed">Completadas</option>
+            </select>
+          </div>
+          
+          <div>
           <label htmlFor="priority-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-            Prioridad
-          </label>
-          <select
+              Prioridad
+            </label>
+            <select 
             id="priority-filter"
             name="priority"
             value={filters.priority}
@@ -350,20 +350,20 @@ const TasksPage = () => {
             value={filters.category}
             onChange={handleFilterChange}
             className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm p-2 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">Todas</option>
+            >
+              <option value="all">Todas</option>
             <option value="personal">Personal</option>
             <option value="trabajo">Trabajo</option>
             <option value="estudio">Estudio</option>
-          </select>
-        </div>
-        
-        <div>
+            </select>
+          </div>
+          
+          <div>
           <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-            Buscar
-          </label>
+              Buscar
+            </label>
           <form onSubmit={handleSearch} className="relative flex">
-            <input
+            <input 
               type="text"
               id="search-input"
               name="searchQuery"
@@ -468,8 +468,8 @@ const TasksPage = () => {
               className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-md text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary transition-colors"
             >
               Cancelar
-            </button>
-            <button
+                  </button>
+                  <button 
               onClick={handleDeleteTask}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center"
               disabled={isSubmitting}
@@ -482,9 +482,9 @@ const TasksPage = () => {
               ) : (
                 'Eliminar'
               )}
-            </button>
-          </div>
-        </div>
+                  </button>
+                </div>
+      </div>
       </Modal>
     </div>
   );

@@ -1,5 +1,11 @@
 {
   "dependencies": {
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.487.0",
+    "react-datepicker": "^8.2.1"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.0",
+    "svg-to-ico": "^1.0.15"
   }
 }
