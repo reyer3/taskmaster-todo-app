@@ -59,29 +59,38 @@ const Layout = ({
     <LayoutContext.Provider value={{ isAuthenticated, isPublicRoute }}>
       <SidebarContext.Provider value={{ collapsed: sidebarCollapsed }}>
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-dark-bg-primary font-sans text-gray-800 dark:text-dark-text-primary overflow-x-hidden">
-          {showHeader && <Header />}
-          
-          <div className="flex flex-1 relative">
-            {displaySidebar && <Sidebar onToggleCollapse={(state) => setSidebarCollapsed(state)} />}
+          {/* Grid layout para la distribución principal */}
+          <div className="flex flex-col min-h-screen grid grid-rows-[auto_1fr_auto]">
+            {/* Header (fila 1) */}
+            {showHeader && <Header />}
             
-            <main 
-              className={`flex-1 transition-all duration-300 ease-in-out
-                ${displaySidebar ? (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''}
-                ${contentClassName}
-                ${isPublicRoute ? 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-dark-bg-secondary dark:to-dark-bg-tertiary' : ''}
-                pt-6`}
-            >
-              <div className={`
-                mx-auto px-4 sm:px-6 
-                ${isPublicRoute ? 'max-w-md' : 'max-w-7xl'}
-                animate-fade-in
-              `}>
-                <Outlet />
-              </div>
-            </main>
+            {/* Contenido principal (fila 2) */}
+            <div className="flex flex-1 relative">
+              {displaySidebar && <Sidebar onToggleCollapse={(state) => setSidebarCollapsed(state)} />}
+              
+              <main 
+                className={`flex-1 transition-all duration-300 ease-in-out
+                  ${displaySidebar ? (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''}
+                  ${contentClassName}
+                  ${isPublicRoute ? 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-dark-bg-secondary dark:to-dark-bg-tertiary' : ''}
+                  pt-6 flex flex-col`}
+              >
+                <div className={`
+                  mx-auto px-4 sm:px-6 
+                  ${isPublicRoute ? 'max-w-md' : 'max-w-7xl'}
+                  animate-fade-in flex-1
+                `}>
+                  <Outlet />
+                </div>
+                
+                {/* Espaciador entre contenido y footer */}
+                <div className="my-16"></div>
+              </main>
+            </div>
+            
+            {/* Footer (fila 3) */}
+            {showFooter && <Footer sidebarCollapsed={sidebarCollapsed} displaySidebar={displaySidebar} />}
           </div>
-          
-          {showFooter && <Footer sidebarCollapsed={sidebarCollapsed} displaySidebar={displaySidebar} />}
         </div>
       </SidebarContext.Provider>
     </LayoutContext.Provider>

@@ -283,108 +283,132 @@ const TasksPage = () => {
     return Array.from(categories);
   }, [tasks]);
   
+  // Renderizar componente
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary">Mis Tareas</h1>
-        <button 
-          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md transition-colors"
+    <div className="tasks-page">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4 md:mb-0">
+          Mis Tareas
+        </h1>
+        
+        <button
           onClick={handleOpenCreateModal}
+          className="btn-primary md:self-end px-4 py-2 rounded-md flex items-center gap-2"
         >
-          Nueva Tarea
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span>Nueva Tarea</span>
         </button>
       </div>
       
       {/* Filtros */}
-      <div className="bg-white dark:bg-dark-bg-secondary p-4 rounded-md shadow-sm mb-6">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              Estado
-            </label>
-            <select 
-              id="status"
-              name="status"
-              value={filters.status}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div>
+          <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            Estado
+          </label>
+          <select
+            id="status-filter"
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+            className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm p-2 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">Todas</option>
+            <option value="pending">Pendientes</option>
+            <option value="completed">Completadas</option>
+          </select>
+        </div>
+        
+        <div>
+          <label htmlFor="priority-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            Prioridad
+          </label>
+          <select
+            id="priority-filter"
+            name="priority"
+            value={filters.priority}
+            onChange={handleFilterChange}
+            className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm p-2 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">Todas</option>
+            <option value="high">Alta</option>
+            <option value="medium">Media</option>
+            <option value="low">Baja</option>
+            <option value="none">Sin prioridad</option>
+          </select>
+        </div>
+        
+        <div>
+          <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            Categoría
+          </label>
+          <select
+            id="category-filter"
+            name="category"
+            value={filters.category}
+            onChange={handleFilterChange}
+            className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm p-2 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">Todas</option>
+            <option value="personal">Personal</option>
+            <option value="trabajo">Trabajo</option>
+            <option value="estudio">Estudio</option>
+          </select>
+        </div>
+        
+        <div>
+          <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
+            Buscar
+          </label>
+          <form onSubmit={handleSearch} className="relative flex">
+            <input
+              type="text"
+              id="search-input"
+              name="searchQuery"
+              value={filters.searchQuery}
               onChange={handleFilterChange}
-              className="border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-primary rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Buscar tareas..."
+              className="block w-full bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-md shadow-sm py-2 px-3 pr-10 text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              type="submit"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-dark-text-secondary"
             >
-              <option value="all">Todas</option>
-              <option value="completed">Completadas</option>
-              <option value="pending">Pendientes</option>
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              Prioridad
-            </label>
-            <select 
-              id="priority"
-              name="priority"
-              value={filters.priority}
-              onChange={handleFilterChange}
-              className="border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-primary rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">Todas</option>
-              <option value="high">Alta</option>
-              <option value="medium">Media</option>
-              <option value="low">Baja</option>
-              <option value="none">Ninguna</option>
-            </select>
-          </div>
-          
-          {availableCategories.length > 0 && (
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-                Categoría
-              </label>
-              <select 
-                id="category"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
-                className="border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-primary rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="all">Todas</option>
-                {availableCategories.map(category => (
-                  <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          <div className="flex-1 min-w-[200px]">
-            <label htmlFor="searchQuery" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">
-              Buscar
-            </label>
-            <div className="relative">
-              <input 
-                type="text"
-                id="searchQuery"
-                name="searchQuery"
-                value={filters.searchQuery}
-                onChange={handleFilterChange}
-                className="w-full border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg-tertiary text-gray-800 dark:text-dark-text-primary rounded-md px-3 py-1 pr-10 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Buscar tareas..."
-              />
-              <button 
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary hover:text-primary"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </form>
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
       
-      {/* Lista de tareas o detalle */}
-      {showTaskDetail ? (
+      {/* Lista de tareas con mejor espaciado para el footer */}
+      <div className="tasks-container">
+        <TaskList
+          tasks={filteredTasks}
+          onTaskComplete={(taskId) => handleToggleTaskComplete(taskId, true)}
+          onTaskDelete={handleOpenDeleteModal}
+          onTaskEdit={handleOpenEditModal}
+          onTaskView={handleViewTaskDetails}
+          onTasksReorder={handleTasksReorder}
+          loading={isLoading}
+          error={error}
+          emptyMessage="No hay tareas que coincidan con los filtros seleccionados."
+        />
+      </div>
+      
+      {/* Divisor visual antes del footer */}
+      <div className="content-footer-divider"></div>
+      
+      {/* Modal para ver detalles de tarea */}
+      <Modal 
+        isOpen={showTaskDetail} 
+        onClose={handleCloseTaskDetails}
+        title="Detalles de la tarea"
+        size="lg"
+      >
         <TaskDetail 
           task={selectedTask}
           onEdit={handleOpenEditModal}
@@ -392,23 +416,7 @@ const TasksPage = () => {
           onBack={handleCloseTaskDetails}
           onToggleComplete={handleToggleTaskComplete}
         />
-      ) : (
-        <TaskList 
-          tasks={filteredTasks}
-          onTaskComplete={handleToggleTaskComplete}
-          onTaskDelete={handleOpenDeleteModal}
-          onTaskEdit={handleOpenEditModal}
-          onTaskView={handleViewTaskDetails}
-          onTasksReorder={handleTasksReorder}
-          loading={isLoading}
-          error={error}
-          emptyMessage={
-            filters.searchQuery || filters.status !== 'all' || filters.priority !== 'all' || filters.category !== 'all'
-              ? "No hay tareas que coincidan con los filtros"
-              : "No hay tareas para mostrar. ¡Crea tu primera tarea!"
-          }
-        />
-      )}
+      </Modal>
       
       {/* Modal para creación de tarea */}
       <Modal 
