@@ -4,8 +4,7 @@ import { format } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
 import "react-datepicker/dist/react-datepicker.css";
-import { useContext } from 'react';
-import { ThemeContext } from '../../../../context/ThemeContext';
+import useTheme from '../../../../hooks/useTheme';
 
 // Registrar el idioma español
 registerLocale('es', es);
