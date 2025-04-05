@@ -12,7 +12,7 @@ import { getDashboardStats, searchTasks } from '../services/dashboard.service';
  */
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, success, error: showError } = useToast();
   const [stats, setStats] = useState({
     totalTasks: 0,
     completedTasks: 0,
@@ -21,6 +21,12 @@ const DashboardPage = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchMeta, setSearchMeta] = useState({
+    lastQuery: '',
+    resultCount: 0,
+    timestamp: 0
+  });
 
   useEffect(() => {
     // Carga de datos del dashboard utilizando el servicio
@@ -39,38 +45,48 @@ const DashboardPage = () => {
         setIsLoading(false);
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
-        showToast({
-          type: 'error',
-          title: 'Error',
-          message: 'No se pudieron cargar los datos del dashboard'
-        });
+        showError('No se pudieron cargar los datos del dashboard');
         setIsLoading(false);
       }
     };
 
     loadDashboardData();
-  }, [showToast]);
+  }, [showError]);
 
   const handleFilterChange = async (filters) => {
     try {
+      // Guardar metadatos de búsqueda para UI
+      const searchTerm = filters.searchQuery || '';
+      const startTime = Date.now();
+      
+      // Mostrar indicador visual durante la búsqueda
+      if (searchTerm && searchTerm !== searchMeta.lastQuery) {
+        setIsSearching(true);
+      }
+      
       console.log('Aplicando filtros:', filters);
       
       // Usar el servicio de búsqueda para obtener resultados filtrados
       const results = await searchTasks(filters);
-      setFilteredResults(results);
       
-      showToast({
-        type: 'info',
-        title: 'Filtros aplicados',
-        message: `Se encontraron ${results.length} resultados`
+      // Actualizar resultados y metadatos
+      setFilteredResults(results);
+      setIsSearching(false);
+      
+      setSearchMeta({
+        lastQuery: searchTerm,
+        resultCount: results.length,
+        timestamp: Date.now()
       });
+      
+      // Solo mostrar notificación si fue una búsqueda explícita (no cambio automático por debounce)
+      if (searchTerm && startTime - searchMeta.timestamp > 1000) {
+        success(`Se encontraron ${results.length} resultados`);
+      }
     } catch (error) {
       console.error('Error al aplicar filtros:', error);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'No se pudieron aplicar los filtros'
-      });
+      showError('No se pudieron aplicar los filtros');
+      setIsSearching(false);
     }
   };
 
@@ -133,41 +149,60 @@ const DashboardPage = () => {
       </div>
 
       {/* Resultados de búsqueda/filtrado */}
-      {filteredResults.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             Resultados
           </h2>
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                <th className="pb-2">Tarea</th>
-                <th className="pb-2">Estado</th>
-                <th className="pb-2">Fecha de vencimiento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredResults.map(task => (
-                <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700">
-                  <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      task.status === 'completed' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
-                    }`}>
-                      {task.status === 'completed' ? 'Completada' : 'Pendiente'}
-                    </span>
-                  </td>
-                  <td className="py-3 text-gray-600 dark:text-gray-300">
-                    {new Date(task.dueDate).toLocaleDateString('es-ES')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {isSearching && (
+            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+              <div className="mr-2 w-4 h-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
+              Buscando...
+            </div>
+          )}
         </div>
-      )}
+        
+        {filteredResults.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  <th className="pb-2">Tarea</th>
+                  <th className="pb-2">Estado</th>
+                  <th className="pb-2">Fecha de vencimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredResults.map(task => (
+                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700">
+                    <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        task.status === 'completed' || task.completed
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                      }`}>
+                        {task.status === 'completed' || task.completed ? 'Completada' : 'Pendiente'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-gray-600 dark:text-gray-300">
+                      {task.dueDate 
+                        ? new Date(task.dueDate).toLocaleDateString('es-ES')
+                        : 'Sin fecha'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p className="mb-2 text-2xl">🔍</p>
+            <p className="text-lg font-medium">No se encontraron resultados</p>
+            <p className="text-sm mt-2">Intenta con diferentes términos de búsqueda o filtros</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -177,13 +212,19 @@ const DashboardPage = () => {
  */
 const StatCard = ({ title, value, icon, color }) => {
   return (
-    <div className={`rounded-lg shadow p-6 ${color} text-gray-800 dark:text-white`}>
-      <div className="flex justify-between items-start">
+    <div className={`${color} rounded-lg p-6 transition-all duration-300 hover:shadow-md`}>
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
+          <p className="text-lg font-medium text-gray-800 dark:text-white">
+            {title}
+          </p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+            {value}
+          </p>
         </div>
-        <div className="text-3xl">{icon}</div>
+        <div className="text-3xl">
+          {icon}
+        </div>
       </div>
     </div>
   );

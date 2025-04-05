@@ -44,72 +44,240 @@ export const getDashboardStats = async () => {
 };
 
 /**
- * Obtiene las tareas próximas a vencer usando el endpoint específico
- * @param {number} days - Número de días para considerar una tarea próxima
- * @returns {Promise} - Promesa con las tareas próximas
+ * Obtiene tareas que están próximas a vencer
+ * @param {number} days - Número de días para considerar como "próximas"
+ * @returns {Promise} - Promesa con las tareas próximas a vencer
  */
 export const getUpcomingTasks = async (days = 7) => {
   try {
-    // Usamos el endpoint específico del backend para tareas próximas
-    const upcomingTasks = await api.get(`/tasks/upcoming?days=${days}`);
-    
-    // Si la respuesta no es un array, devolvemos array vacío
-    if (!Array.isArray(upcomingTasks)) {
-      return [];
-    }
-    
-    return upcomingTasks;
-  } catch (error) {
-    console.error(`Error obteniendo tareas próximas a vencer (${days} días):`, error);
-    // Si hay error, intentamos calcular manualmente desde todas las tareas
-    try {
-      const allTasks = await api.get('/tasks');
-      if (!Array.isArray(allTasks)) return [];
-      
-      const today = new Date();
-      return allTasks.filter(task => {
-        if (task.status === 'completed' || task.completed) return false;
-        if (!task.dueDate) return false;
-        
-        const dueDate = new Date(task.dueDate);
-        const diffTime = dueDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        return diffDays >= 0 && diffDays <= days;
-      });
-    } catch (fallbackError) {
-      console.error('Error en fallback para tareas próximas:', fallbackError);
-      return [];
-    }
-  }
-};
-
-/**
- * Obtiene las tareas recientes usando el endpoint de tareas
- * @param {number} limit - Cantidad máxima de tareas a retornar
- * @returns {Promise} - Promesa con las tareas recientes
- */
-export const getRecentTasks = async (limit = 5) => {
-  try {
-    // Obtenemos todas las tareas y las ordenamos manualmente
     const tasks = await api.get('/tasks');
     
-    // Si no hay tareas o no es un array, devolvemos array vacío
     if (!Array.isArray(tasks) || tasks.length === 0) {
       return [];
     }
     
-    // Ordenamos por fecha de creación descendente (más recientes primero)
-    const sortedTasks = [...tasks].sort((a, b) => {
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(now.getDate() + days);
+    
+    // Filtramos tareas que no estén completadas y venzan en los próximos días
+    return tasks.filter(task => {
+      if (task.status === 'completed' || task.completed) {
+        return false;
+      }
+      
+      // Si no tiene fecha de vencimiento, no la consideramos
+      if (!task.dueDate) {
+        return false;
+      }
+      
+      const dueDate = new Date(task.dueDate);
+      return dueDate >= now && dueDate <= futureDate;
+    });
+  } catch (error) {
+    console.error('Error obteniendo tareas próximas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene las tareas más recientes
+ * @param {number} limit - Número máximo de tareas a devolver
+ * @returns {Promise} - Promesa con las tareas más recientes
+ */
+export const getRecentTasks = async (limit = 5) => {
+  try {
+    const tasks = await api.get('/tasks');
+    
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return [];
+    }
+    
+    // Ordenamos por fecha de creación, las más recientes primero
+    return [...tasks]
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.updatedAt || 0);
+        const dateB = new Date(b.createdAt || b.updatedAt || 0);
+        return dateB - dateA;
+      })
+      .slice(0, limit);
+  } catch (error) {
+    console.error('Error obteniendo tareas recientes:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cache para almacenar resultados de búsquedas recientes
+ * Estructura: { [queryKey]: { timestamp, results } }
+ */
+const searchCache = {
+  tasks: null,
+  lastFetch: 0,
+  results: {},
+  cacheDuration: 60000 // 1 minuto
+};
+
+/**
+ * Genera una clave única para los filtros de búsqueda
+ * @param {Object} filters - Filtros aplicados
+ * @returns {string} - Clave única
+ */
+const generateFilterKey = (filters) => {
+  return JSON.stringify(filters);
+};
+
+/**
+ * Verifica si los resultados en caché son válidos
+ * @param {string} key - Clave de búsqueda
+ * @returns {boolean} - True si la caché es válida
+ */
+const isCacheValid = (key) => {
+  const now = Date.now();
+  
+  // Si no hay caché de tareas o expiró, no es válido
+  if (!searchCache.tasks || now - searchCache.lastFetch > searchCache.cacheDuration) {
+    return false;
+  }
+  
+  // Si no hay resultados para esta clave, no es válido
+  if (!searchCache.results[key]) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Busca y filtra tareas según criterios
+ * Implementa caché para mejorar rendimiento y reducir llamadas al API
+ * 
+ * @param {Object} filters - Criterios de búsqueda y filtrado
+ * @returns {Promise} - Promesa con las tareas encontradas
+ */
+export const searchTasks = async (filters = {}) => {
+  try {
+    // Generar clave única para estos filtros
+    const filterKey = generateFilterKey(filters);
+    
+    // Verificar caché
+    if (isCacheValid(filterKey)) {
+      console.log('Usando resultados en caché para:', filters);
+      return searchCache.results[filterKey];
+    }
+    
+    // Refrescar caché de tareas si es necesario
+    const now = Date.now();
+    if (!searchCache.tasks || now - searchCache.lastFetch > searchCache.cacheDuration) {
+      console.log('Actualizando caché de tareas');
+      const tasks = await api.get('/tasks');
+      searchCache.tasks = Array.isArray(tasks) ? tasks : [];
+      searchCache.lastFetch = now;
+    }
+    
+    // Si no hay tareas, devolver array vacío
+    if (!searchCache.tasks.length) {
+      return [];
+    }
+    
+    // Filtramos según los criterios proporcionados
+    let filteredTasks = [...searchCache.tasks];
+    
+    // Filtrar por texto (búsqueda en título y descripción)
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase().trim();
+      if (query.length > 0) {
+        filteredTasks = filteredTasks.filter(task => 
+          (task.title && task.title.toLowerCase().includes(query)) ||
+          (task.description && task.description.toLowerCase().includes(query))
+        );
+      }
+    }
+    
+    // Filtrar por estado
+    if (filters.status) {
+      filteredTasks = filteredTasks.filter(task => {
+        if (filters.status === 'completed') {
+          return task.status === 'completed' || task.completed;
+        } else if (filters.status === 'pending') {
+          return task.status !== 'completed' && !task.completed;
+        } else if (filters.status === 'inProgress') {
+          return task.status === 'inProgress';
+        } else if (filters.status === 'cancelled') {
+          return task.status === 'cancelled';
+        }
+        return true;
+      });
+    }
+    
+    // Filtrar por prioridad
+    if (filters.priority) {
+      filteredTasks = filteredTasks.filter(task => 
+        task.priority === filters.priority
+      );
+    }
+    
+    // Filtrar por rango de fechas
+    if (filters.dateRange && filters.dateRange !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let startDate = new Date(today);
+      
+      // Configuramos la fecha de inicio según el rango especificado
+      switch (filters.dateRange) {
+        case 'today':
+          // startDate ya está en el inicio del día actual
+          break;
+        case 'week':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(today.getMonth() - 1);
+          break;
+        case 'year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        case 'overdue':
+          // Para tareas vencidas, filtramos de manera diferente
+          filteredTasks = filteredTasks.filter(task => {
+            if (!task.dueDate || task.status === 'completed' || task.completed) {
+              return false;
+            }
+            const dueDate = new Date(task.dueDate);
+            return dueDate < today;
+          });
+          // Como ya aplicamos un filtro específico, salimos del switch
+          break;
+        default:
+          startDate.setDate(today.getDate() - 30); // Por defecto, último mes
+      }
+      
+      // Si no es 'overdue', aplicamos el filtro de rango de fechas
+      if (filters.dateRange !== 'overdue') {
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+        
+        filteredTasks = filteredTasks.filter(task => {
+          // Para búsqueda por fecha de creación
+          const taskDate = new Date(task.createdAt || task.updatedAt || 0);
+          return taskDate >= startDate && taskDate <= endDate;
+        });
+      }
+    }
+    
+    // Ordenamos los resultados (más recientes primero)
+    filteredTasks.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.updatedAt || 0);
       const dateB = new Date(b.createdAt || b.updatedAt || 0);
       return dateB - dateA;
     });
     
-    // Devolvemos solo la cantidad solicitada
-    return sortedTasks.slice(0, limit);
+    // Guardar en caché
+    searchCache.results[filterKey] = filteredTasks;
+    
+    return filteredTasks;
   } catch (error) {
-    console.error('Error obteniendo tareas recientes:', error);
+    console.error('Error buscando tareas:', error);
     throw error;
   }
 };
@@ -171,88 +339,6 @@ export const getActivityData = async (days = 30) => {
     return activityData;
   } catch (error) {
     console.error('Error obteniendo datos de actividad:', error);
-    throw error;
-  }
-};
-
-/**
- * Busca y filtra tareas según criterios
- * @param {Object} filters - Criterios de búsqueda y filtrado
- * @returns {Promise} - Promesa con las tareas encontradas
- */
-export const searchTasks = async (filters = {}) => {
-  try {
-    // Obtenemos todas las tareas y filtramos manualmente
-    const tasks = await api.get('/tasks');
-    
-    // Si no hay tareas o no es un array, devolvemos array vacío
-    if (!Array.isArray(tasks) || tasks.length === 0) {
-      return [];
-    }
-    
-    // Filtramos según los criterios proporcionados
-    let filteredTasks = [...tasks];
-    
-    // Filtrar por texto (búsqueda en título y descripción)
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      filteredTasks = filteredTasks.filter(task => 
-        (task.title && task.title.toLowerCase().includes(query)) ||
-        (task.description && task.description.toLowerCase().includes(query))
-      );
-    }
-    
-    // Filtrar por estado
-    if (filters.status) {
-      filteredTasks = filteredTasks.filter(task => {
-        if (filters.status === 'completed') {
-          return task.status === 'completed' || task.completed;
-        } else if (filters.status === 'pending') {
-          return task.status !== 'completed' && !task.completed;
-        }
-        return true;
-      });
-    }
-    
-    // Filtrar por rango de fechas
-    if (filters.dateRange) {
-      const today = new Date();
-      let startDate = new Date();
-      
-      // Configuramos la fecha de inicio según el rango especificado
-      switch (filters.dateRange) {
-        case 'today':
-          startDate = new Date(today.setHours(0, 0, 0, 0));
-          break;
-        case 'week':
-          startDate.setDate(today.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setMonth(today.getMonth() - 1);
-          break;
-        case 'year':
-          startDate.setFullYear(today.getFullYear() - 1);
-          break;
-        default:
-          startDate.setDate(today.getDate() - 30); // Por defecto, último mes
-      }
-      
-      filteredTasks = filteredTasks.filter(task => {
-        const taskDate = new Date(task.createdAt || task.updatedAt || 0);
-        return taskDate >= startDate && taskDate <= today;
-      });
-    }
-    
-    // Ordenamos los resultados (más recientes primero)
-    filteredTasks.sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.updatedAt || 0);
-      const dateB = new Date(b.createdAt || b.updatedAt || 0);
-      return dateB - dateA;
-    });
-    
-    return filteredTasks;
-  } catch (error) {
-    console.error('Error buscando tareas:', error);
     throw error;
   }
 }; 

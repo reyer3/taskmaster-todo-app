@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import useDebounce from '../../../hooks/useDebounce';
 
 /**
  * Componente para la búsqueda y filtrado de tareas
+ * Implementa debounce para evitar llamadas excesivas al servidor
  */
 const TaskFilter = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
@@ -13,18 +15,34 @@ const TaskFilter = ({ onFilterChange }) => {
   
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
+  // Aplicar debounce al término de búsqueda para evitar peticiones innecesarias
+  const debouncedSearchQuery = useDebounce(filters.searchQuery, 500);
+  
+  // Detectar cambios en la búsqueda con debounce y aplicar los filtros
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({
+        ...filters,
+        searchQuery: debouncedSearchQuery
+      });
+    }
+  }, [debouncedSearchQuery, filters.status, filters.priority, filters.dateRange]);
+  
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
     
-    if (onFilterChange) {
+    // Para filtros que no son de búsqueda, aplicar inmediatamente
+    // La búsqueda se aplicará con debounce a través del useEffect
+    if (name !== 'searchQuery' && onFilterChange) {
       onFilterChange(newFilters);
     }
   };
   
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    // Al enviar el formulario, aplicar los filtros inmediatamente
     if (onFilterChange) {
       onFilterChange(filters);
     }
@@ -60,6 +78,7 @@ const TaskFilter = ({ onFilterChange }) => {
             className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
             value={filters.searchQuery}
             onChange={handleFilterChange}
+            autoComplete="off"
           />
           <button
             type="submit"
@@ -68,6 +87,9 @@ const TaskFilter = ({ onFilterChange }) => {
             Buscar
           </button>
         </div>
+        {debouncedSearchQuery && debouncedSearchQuery !== filters.searchQuery && (
+          <p className="text-xs text-gray-500 mt-1 animate-pulse">Buscando...</p>
+        )}
       </form>
       
       {/* Botón para mostrar/ocultar filtros avanzados */}
@@ -80,7 +102,7 @@ const TaskFilter = ({ onFilterChange }) => {
           {showAdvancedFilters ? 'Ocultar filtros avanzados' : 'Mostrar filtros avanzados'}
         </button>
         
-        {filters.status || filters.priority || filters.dateRange !== 'all' ? (
+        {filters.status || filters.priority || filters.dateRange !== 'all' || filters.searchQuery ? (
           <button
             type="button"
             onClick={clearFilters}
