@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getActivityData } from '../services/dashboard.service';
+import { Calendar, Activity } from 'lucide-react';
 
 /**
  * Widget de calendario de actividad
@@ -63,7 +64,8 @@ const ActivityCalendar = () => {
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+        <Calendar size={20} className="mr-2 text-primary" />
         Calendario de Actividad
       </h2>
       
@@ -85,7 +87,10 @@ const ActivityCalendar = () => {
       </div>
       
       <div className="mt-3 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">
-        <span className="mr-2">Menos</span>
+        <span className="mr-2 flex items-center">
+          <Activity size={12} className="mr-1" />
+          Menos
+        </span>
         <div className="flex space-x-1">
           <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-700"></div>
           <div className="w-3 h-3 rounded-sm bg-green-100 dark:bg-green-900"></div>
@@ -94,7 +99,10 @@ const ActivityCalendar = () => {
           <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-600"></div>
           <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-500"></div>
         </div>
-        <span className="ml-2">Más</span>
+        <span className="ml-2 flex items-center">
+          Más
+          <Activity size={12} className="ml-1" />
+        </span>
       </div>
     </div>
   );

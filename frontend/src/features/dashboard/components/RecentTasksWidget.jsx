@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRecentTasks } from '../services/dashboard.service';
+import { Clock, PlusCircle, Calendar, CheckCircle, XCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 
 /**
  * Widget que muestra las tareas más recientes
@@ -32,6 +33,15 @@ const RecentTasksWidget = ({ limit = 5 }) => {
       case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
       case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100';
+    }
+  };
+
+  const getPriorityIcon = (priority) => {
+    switch (priority) {
+      case 'high': return <AlertTriangle size={14} className="mr-1" />;
+      case 'medium': return <Clock size={14} className="mr-1" />;
+      case 'low': return <CheckCircle size={14} className="mr-1" />;
+      default: return null;
     }
   };
 
@@ -67,30 +77,45 @@ const RecentTasksWidget = ({ limit = 5 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex justify-between items-center">
-        <span>Tareas Recientes</span>
-        <Link to="/tasks" className="text-sm text-primary hover:underline">
+        <span className="flex items-center">
+          <Clock size={20} className="mr-2 text-primary" />
+          Tareas Recientes
+        </span>
+        <Link to="/tasks" className="text-sm text-primary hover:underline flex items-center">
           Ver todas
+          <ExternalLink size={14} className="ml-1" />
         </Link>
       </h2>
 
       {tasks.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400 text-center py-6">
-          No hay tareas recientes
-        </p>
+        <div className="text-gray-500 dark:text-gray-400 text-center py-10 flex flex-col items-center">
+          <PlusCircle size={40} className="mb-2 text-gray-400 dark:text-gray-600" />
+          <p>No hay tareas recientes</p>
+          <Link to="/tasks/new" className="mt-2 text-primary hover:underline flex items-center">
+            <PlusCircle size={14} className="mr-1" />
+            Crear tarea
+          </Link>
+        </div>
       ) : (
         <ul className="divide-y divide-gray-100 dark:divide-gray-700">
           {tasks.map(task => (
             <li key={task.id} className="py-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className={`font-medium ${getStatusClass(task.status)}`}>
+                  <p className={`font-medium ${getStatusClass(task.status)} flex items-center`}>
+                    {task.status === 'completed' ? 
+                      <CheckCircle size={14} className="mr-1 text-green-500" /> : 
+                      <Clock size={14} className="mr-1 text-yellow-500" />
+                    }
                     {task.title}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                    <Calendar size={12} className="mr-1" />
                     Creada el {formatDate(task.createdAt)}
                   </p>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${getPriorityBadgeClass(task.priority)}`}>
+                <span className={`text-xs px-2 py-1 rounded-full ${getPriorityBadgeClass(task.priority)} flex items-center`}>
+                  {getPriorityIcon(task.priority)}
                   {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Media' : 'Baja'}
                 </span>
               </div>
