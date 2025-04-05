@@ -1,4 +1,4 @@
-import { apiClient } from '../../../services/api';
+import api from '../../../services/api';
 
 /**
  * Obtiene las estadísticas del dashboard
@@ -6,7 +6,7 @@ import { apiClient } from '../../../services/api';
  */
 export const getDashboardStats = async () => {
   try {
-    const response = await apiClient.get('/dashboard/summary');
+    const response = await api.get('/dashboard/summary');
     return response;
   } catch (error) {
     console.error('Error obteniendo estadísticas del dashboard:', error);
@@ -21,7 +21,7 @@ export const getDashboardStats = async () => {
  */
 export const getRecentTasks = async (limit = 5) => {
   try {
-    const response = await apiClient.get(`/dashboard/recent-tasks?limit=${limit}`);
+    const response = await api.get(`/dashboard/recent-tasks?limit=${limit}`);
     return response;
   } catch (error) {
     console.error('Error obteniendo tareas recientes:', error);
@@ -36,7 +36,7 @@ export const getRecentTasks = async (limit = 5) => {
  */
 export const getActivityData = async (days = 30) => {
   try {
-    const response = await apiClient.get(`/dashboard/activity?days=${days}`);
+    const response = await api.get(`/dashboard/activity?days=${days}`);
     return response;
   } catch (error) {
     console.error('Error obteniendo datos de actividad:', error);
@@ -51,7 +51,7 @@ export const getActivityData = async (days = 30) => {
  */
 export const searchTasks = async (filters) => {
   try {
-    const response = await apiClient.post('/tasks/search', filters);
+    const response = await api.post('/tasks/search', filters);
     return response;
   } catch (error) {
     console.error('Error buscando tareas:', error);
