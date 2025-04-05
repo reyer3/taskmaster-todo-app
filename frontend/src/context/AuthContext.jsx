@@ -74,12 +74,43 @@ export const AuthProvider = ({ children }) => {
       const response = await loginUser(email, password);
       console.log('Respuesta de inicio de sesión:', response);
       
-      // Verificar que la respuesta contenga los datos necesarios
-      if (!response || !response.token) {
-        throw new Error('Respuesta inválida del servidor');
+      // Verificación detallada de la respuesta
+      if (!response) {
+        console.error('La respuesta del servidor es nula o indefinida');
+        throw new Error('No se recibió respuesta del servidor');
       }
       
-      const { user, token } = response;
+      console.log('Estructura de la respuesta:', {
+        hasToken: !!response.token,
+        hasUser: !!response.user,
+        responseType: typeof response,
+        keys: Object.keys(response)
+      });
+      
+      // Intentar extraer token y usuario de diferentes formatos posibles
+      let token = response.token || response.accessToken || response.access_token;
+      let user = response.user || response.userData;
+      
+      if (!token) {
+        console.error('No se encontró token en la respuesta:', response);
+        throw new Error('Respuesta inválida: No se encontró token de autenticación');
+      }
+      
+      if (!user && typeof response === 'object') {
+        // Si no hay un objeto user explícito, pero la respuesta tiene datos de usuario
+        // asumimos que el objeto completo (menos el token) es el usuario
+        const { token: _, ...userFields } = response;
+        if (Object.keys(userFields).length > 0) {
+          user = userFields;
+          console.log('Extrayendo datos de usuario del objeto principal:', user);
+        }
+      }
+      
+      if (!user) {
+        console.error('No se encontró información de usuario en la respuesta:', response);
+        throw new Error('Respuesta inválida: No se encontró información del usuario');
+      }
+      
       setToken(token);
       setUser(user);
       setIsAuthenticated(true);

@@ -14,7 +14,32 @@ import api from '../../../services/api';
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const loginUser = async (email, password) => {
-  return await api.post('/auth/login', { email, password });
+  try {
+    console.log('Enviando solicitud de login al servidor...', { email });
+    const response = await api.post('/auth/login', { email, password });
+    console.log('Respuesta completa del servidor:', response);
+    
+    // Asegurar que la respuesta tenga la estructura esperada
+    if (!response) {
+      console.error('Respuesta vacía del servidor');
+      throw new Error('Respuesta vacía del servidor');
+    }
+    
+    // Si la respuesta no tiene un token o un usuario, pero tiene datos, intenta extraerlos
+    if (!response.token && !response.data && response.user) {
+      console.log('Respuesta no contiene token directamente, pero tiene otros datos:', response);
+      // Estructura alternativa que podría estar enviando el servidor
+      return {
+        token: response.token || response.accessToken || response.access_token,
+        user: response.user || response.userData || response
+      };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error en servicio loginUser:', error);
+    throw error;
+  }
 };
 
 /**
