@@ -1,32 +1,26 @@
 /**
  * Pruebas unitarias para TaskRepository
  */
+
+// Definir los mocks antes de importar los módulos
+const mockPrismaTask = {
+  findMany: jest.fn(),
+  findUnique: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
+
+// Usar doMock en lugar de mock para evitar el hoisting
+jest.doMock('../../../../src/infrastructure/database/prisma-client', () => ({
+  prisma: {
+    task: mockPrismaTask
+  }
+}), {virtual: true});
+
+// Importar los módulos después de configurar los mocks
 const { TaskRepository } = require('../../../../src/infrastructure/repositories/task.repository');
 const { Task } = require('../../../../src/domain/tasks/task.model');
-
-// Mock para Prisma Client
-jest.mock('@prisma/client', () => {
-  const mockPrismaTask = {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  };
-  
-  return {
-    PrismaClient: jest.fn(() => ({
-      task: mockPrismaTask,
-      $connect: jest.fn(),
-      $disconnect: jest.fn(),
-    })),
-  };
-});
-
-// Importar prisma client después del mock
-const { PrismaClient } = require('@prisma/client');
-const prismaClient = new PrismaClient();
-const mockPrismaTask = prismaClient.task;
 
 describe('TaskRepository', () => {
   let taskRepository;

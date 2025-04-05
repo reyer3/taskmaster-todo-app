@@ -1,23 +1,23 @@
 /**
  * Pruebas unitarias para middleware de autenticación
  */
-const { authMiddleware, adminMiddleware } = require('../../../../src/infrastructure/middlewares/auth.middleware');
-const { AuthenticationError, AuthorizationError } = require('../../../../src/utils/errors/app-error');
-
-// Mock para AuthService
+// Definir el mock antes de importar
 const mockAuthService = {
   verifyToken: jest.fn(),
 };
 
-// Mock para UserRepository
-jest.mock('../../../../src/infrastructure/repositories/user.repository', () => ({
-  UserRepository: jest.fn().mockImplementation(() => ({})),
-}));
-
 // Mock para AuthService
 jest.mock('../../../../src/services/auth.service', () => ({
   AuthService: jest.fn().mockImplementation(() => mockAuthService)
-}));
+}), {virtual: true});
+
+// Mock para UserRepository
+jest.mock('../../../../src/infrastructure/repositories/user.repository', () => ({
+  UserRepository: jest.fn().mockImplementation(() => ({}))
+}), {virtual: true});
+
+const { authMiddleware, adminMiddleware } = require('../../../../src/infrastructure/middlewares/auth.middleware');
+const { AuthenticationError, AuthorizationError } = require('../../../../src/utils/errors/app-error');
 
 describe('Auth Middleware', () => {
   // Objetos mock para req, res, next
