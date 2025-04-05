@@ -6,7 +6,7 @@ import RegisterPage from './features/auth/components/RegisterPage';
 import TasksPage from './features/tasks/components/TasksPage';
 import NotFoundPage from './components/NotFoundPage';
 import { useToast } from './hooks/useToast';
-import Toast from './components/ui/Toast';
+import Toast from './components/common/Toast';
 
 /**
  * Componente principal de la aplicación
@@ -14,7 +14,7 @@ import Toast from './components/ui/Toast';
  */
 function App() {
   const { isAuthenticated, user } = useAuth();
-  const { toasts } = useToast();
+  const { toasts, removeToast } = useToast();
 
   /**
    * Componente de ruta protegida que redirecciona si no hay autenticación
@@ -58,7 +58,7 @@ function App() {
       {/* Sistema de notificaciones */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map(toast => (
-          <Toast key={toast.id} toast={toast} />
+          <Toast key={toast.id} toast={toast} onClose={removeToast} />
         ))}
       </div>
     </>
