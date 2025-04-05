@@ -4,9 +4,20 @@ import { format } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
 import "react-datepicker/dist/react-datepicker.css";
+import { useContext } from 'react';
+import { ThemeContext } from '../../../../contexts/ThemeContext';
 
 // Registrar el idioma español
 registerLocale('es', es);
+
+// Nombres de los meses en español
+const months = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+// Generar años desde el actual hasta 10 años en el futuro
+const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i);
 
 // Mapeo de prioridades para mostrar en español pero enviar en inglés al API
 const PRIORITY_MAP = {
@@ -211,6 +222,35 @@ const TaskForm = ({
     }
   };
   
+  // Función para manejar eventos de teclado para accesibilidad del calendario
+  const handleCalendarKeyDown = (e) => {
+    // Escapar cierra el calendario
+    if (e.key === 'Escape') {
+      const input = document.getElementById('dueDate');
+      if (input) {
+        input.click(); // Simular clic para cerrar el datepicker
+      }
+      e.preventDefault();
+    }
+    
+    // Enter selecciona la fecha actual marcada
+    if (e.key === 'Enter') {
+      const selectedDay = document.querySelector('.react-datepicker__day--selected');
+      if (selectedDay) {
+        selectedDay.click();
+        
+        // Dar tiempo para ver la selección y luego cerrar
+        setTimeout(() => {
+          const input = document.getElementById('dueDate');
+          if (input) {
+            input.click(); // Simular clic para cerrar el datepicker
+          }
+        }, 300);
+      }
+      e.preventDefault();
+    }
+  };
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Título */}
@@ -331,15 +371,22 @@ const TaskForm = ({
               autoComplete="off"
               closeOnSelect={false}
               shouldCloseOnSelect={false}
-              onClickOutside={() => {
-                // Solo cerrar el calendario si se hace clic fuera del calendario y del input
-                const calendarElement = document.querySelector('.react-datepicker');
-                if (calendarElement) {
-                  // Mantener el calendario abierto hasta que se seleccione una fecha
-                  // o se haga clic explícitamente fuera
+              onClickOutside={(event) => {
+                // Cerrar el calendario si se hace clic en el overlay (fondo oscuro)
+                if (event.target.classList.contains('calendar-centered') || 
+                    event.target.classList.contains('calendar-overlay')) {
+                  const input = document.getElementById('dueDate');
+                  if (input) {
+                    input.click(); // Simular clic para cerrar el datepicker
+                  }
                 }
               }}
               onCalendarOpen={() => {
+                // Crear overlay para poder cerrar al hacer clic en el fondo
+                const overlay = document.createElement('div');
+                overlay.className = 'calendar-overlay';
+                document.body.appendChild(overlay);
+                
                 // Forzar posicionamiento inteligente del calendario en el centro de la pantalla
                 setTimeout(() => {
                   const calendar = document.querySelector('.react-datepicker');
@@ -365,8 +412,68 @@ const TaskForm = ({
                       calendar.style.maxHeight = `${viewportHeight * 0.8}px`;
                       calendar.style.overflow = "hidden";
                     }
+                    
+                    // Añadir botón "Seleccionar" personalizado
+                    const footerButtons = document.createElement('div');
+                    footerButtons.className = 'calendar-footer-buttons';
+                    
+                    const selectButton = document.createElement('button');
+                    selectButton.textContent = 'Seleccionar';
+                    selectButton.className = 'calendar-select-button';
+                    selectButton.setAttribute('aria-label', 'Confirmar selección de fecha');
+                    selectButton.onclick = () => {
+                      const input = document.getElementById('dueDate');
+                      if (input) {
+                        input.click(); // Simular clic para cerrar el datepicker
+                      }
+                    };
+                    
+                    const cancelButton = document.createElement('button');
+                    cancelButton.textContent = 'Cancelar';
+                    cancelButton.className = 'calendar-cancel-button';
+                    cancelButton.setAttribute('aria-label', 'Cancelar selección de fecha');
+                    cancelButton.onclick = () => {
+                      const input = document.getElementById('dueDate');
+                      if (input) {
+                        // Restaurar la fecha original antes de cerrar
+                        setFormData({
+                          ...formData,
+                          dueDate: formData.dueDate
+                        });
+                        input.click(); // Simular clic para cerrar el datepicker
+                      }
+                    };
+                    
+                    footerButtons.appendChild(cancelButton);
+                    footerButtons.appendChild(selectButton);
+                    
+                    // Si ya existe un today-button, colocarlo después
+                    const todayButton = calendar.querySelector('.react-datepicker__today-button');
+                    if (todayButton) {
+                      todayButton.after(footerButtons);
+                    } else {
+                      calendar.appendChild(footerButtons);
+                    }
+                    
+                    // Mejorar accesibilidad
+                    calendar.setAttribute('role', 'dialog');
+                    calendar.setAttribute('aria-modal', 'true');
+                    calendar.setAttribute('aria-labelledby', 'calendar-header');
+                    
+                    // Agregar manejo de teclas para accesibilidad
+                    document.addEventListener('keydown', handleCalendarKeyDown);
                   }
                 }, 10);
+              }}
+              onCalendarClose={() => {
+                // Eliminar overlay cuando se cierra el calendario
+                const overlay = document.querySelector('.calendar-overlay');
+                if (overlay) {
+                  document.body.removeChild(overlay);
+                }
+                
+                // Remover event listeners cuando se cierra
+                document.removeEventListener('keydown', handleCalendarKeyDown);
               }}
               popperModifiers={[
                 {
@@ -403,9 +510,14 @@ const TaskForm = ({
               ]}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base calendar-compact calendar-float calendar-modal"
+              calendarClassName="shadow-xl border-0 text-base calendar-compact calendar-float calendar-modal calendar-accessible"
               popperClassName="datepicker-popper-float"
               fixedHeight
+              dayClassName={date => 
+                date.getDay() === 0 || date.getDay() === 6 
+                  ? 'weekend-day' 
+                  : undefined
+              }
               renderCustomHeader={({
                 date,
                 changeYear,
@@ -413,63 +525,55 @@ const TaskForm = ({
                 decreaseMonth,
                 increaseMonth,
                 prevMonthButtonDisabled,
-                nextMonthButtonDisabled,
+                nextMonthButtonDisabled
               }) => (
-                <div className="datepicker-custom-header">
-                  <button 
-                    className="flex items-center justify-center" 
-                    onClick={decreaseMonth} 
+                <div className="datepicker-custom-header" id="calendar-header">
+                  <button
+                    onClick={decreaseMonth}
                     disabled={prevMonthButtonDisabled}
+                    type="button"
+                    className="react-datepicker__navigation-button"
+                    aria-label="Mes anterior"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+                    ←
                   </button>
-                  <div className="flex space-x-1">
+                  <div className="datepicker-selects">
                     <select
-                      value={date.getMonth()}
-                      onChange={({ target: { value } }) => changeMonth(Number(value))}
                       className="datepicker-dropdown"
+                      value={date.getMonth()}
+                      onChange={({ target: { value } }) => changeMonth(value)}
+                      aria-label="Seleccionar mes"
                     >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {new Date(date.getFullYear(), i).toLocaleString('es', { month: 'long' })}
+                      {months.map((option, i) => (
+                        <option key={option} value={i}>
+                          {option}
                         </option>
                       ))}
                     </select>
                     <select
-                      value={date.getFullYear()}
-                      onChange={({ target: { value } }) => changeYear(Number(value))}
                       className="datepicker-dropdown"
+                      value={date.getFullYear()}
+                      onChange={({ target: { value } }) => changeYear(value)}
+                      aria-label="Seleccionar año"
                     >
-                      {Array.from({ length: 10 }, (_, i) => {
-                        const year = new Date().getFullYear() + i;
-                        return (
-                          <option key={i} value={year}>
-                            {year}
-                          </option>
-                        );
-                      })}
+                      {years.map(option => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                  <button 
-                    className="flex items-center justify-center" 
-                    onClick={increaseMonth} 
+                  <button
+                    onClick={increaseMonth}
                     disabled={nextMonthButtonDisabled}
+                    type="button"
+                    className="react-datepicker__navigation-button"
+                    aria-label="Siguiente mes"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
+                    →
                   </button>
                 </div>
               )}
-              dayClassName={date => 
-                date.getDate() === new Date().getDate() && 
-                date.getMonth() === new Date().getMonth() && 
-                date.getFullYear() === new Date().getFullYear() 
-                  ? "datepicker-today" 
-                  : undefined
-              }
             />
             {formData.dueDate && (
               <button

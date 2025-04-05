@@ -594,10 +594,11 @@
 
 /* Estilos para el calendario centrado tipo modal */
 .calendar-modal {
-  border: 2px solid rgb(var(--primary)) !important;
+  border: 3px solid rgb(var(--primary)) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35) !important;
+  font-size: 0.85rem !important;
 }
 
 .calendar-centered {
@@ -628,18 +629,22 @@
 
 /* Hacer que los días sean más compactos */
 .calendar-modal .react-datepicker__day {
-  margin: 0.1rem !important;
+  margin: 0.05rem !important;
   padding: 0.05rem !important;
-  height: 1.6rem !important;
-  width: 1.6rem !important;
-  line-height: 1.5rem !important;
-  font-size: 0.85rem !important;
+  height: 1.5rem !important;
+  width: 1.5rem !important;
+  line-height: 1.4rem !important;
+  font-size: 0.8rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .calendar-modal .react-datepicker__day-name {
-  margin: 0.1rem !important;
-  width: 1.6rem !important;
-  font-size: 0.85rem !important;
+  margin: 0.05rem !important;
+  width: 1.5rem !important;
+  font-size: 0.8rem !important;
+  font-weight: bold !important;
 }
 
 /* Reducir espaciado en encabezado */
@@ -685,4 +690,226 @@
 .dark .calendar-modal {
   background-color: #1f2937 !important;
   border-color: rgb(var(--primary)) !important;
+}
+
+/* Overlay semitransparente para efecto modal */
+.calendar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9998;
+}
+
+/* Mejorar contraste de día seleccionado */
+.react-datepicker__day--selected {
+  background-color: rgb(var(--primary)) !important;
+  color: white !important;
+  font-weight: bold !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+  transform: scale(1.1) !important;
+  transition: all 0.15s ease-out !important;
+}
+
+/* Realzar día actualmente enfocado para navegación por teclado */
+.react-datepicker__day:focus-visible,
+.react-datepicker__day--keyboard-selected {
+  background-color: rgba(var(--primary), 0.15) !important;
+  outline: 2px solid rgb(var(--primary)) !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Estilo para días de fin de semana */
+.weekend-day {
+  color: rgb(var(--primary-light)) !important;
+  font-weight: 500 !important;
+}
+
+/* Botones de navegación más accesibles */
+.react-datepicker__navigation-button {
+  font-size: 1.5rem !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  transition: background-color 0.15s ease-out !important;
+  cursor: pointer !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.react-datepicker__navigation-button:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.react-datepicker__navigation-button:focus-visible {
+  outline: 2px solid white !important;
+}
+
+/* Mejorar selects de mes y año para accesibilidad */
+.datepicker-selects {
+  display: flex !important;
+  gap: 0.25rem !important;
+}
+
+/* Botones de pie de página */
+.calendar-footer-buttons {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.calendar-select-button, 
+.calendar-cancel-button {
+  padding: 0.3rem 1rem !important;
+  border-radius: 4px !important;
+  font-weight: medium !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-out !important;
+  border: none !important;
+}
+
+.calendar-select-button {
+  background-color: rgb(var(--primary)) !important;
+  color: white !important;
+}
+
+.calendar-select-button:hover {
+  background-color: rgba(var(--primary), 0.9) !important;
+}
+
+.calendar-cancel-button {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.calendar-cancel-button:hover {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Animación mejorada para transición entre meses */
+.react-datepicker__month-container {
+  transition: opacity 0.2s ease-out !important;
+}
+
+/* Optimizaciones para móviles */
+@media (max-width: 640px) {
+  /* Calendario más grande para táctil en móviles */
+  .calendar-modal .react-datepicker__day {
+    height: 2rem !important;
+    width: 2rem !important;
+    margin: 0.1rem !important;
+    line-height: 1.9rem !important;
+    font-size: 0.95rem !important;
+  }
+  
+  .calendar-modal .react-datepicker__day-name {
+    margin: 0.1rem !important;
+    width: 2rem !important;
+    font-size: 0.9rem !important;
+  }
+  
+  /* Selectores más grandes para ser amigables con táctil */
+  .datepicker-dropdown {
+    padding: 0.5rem 1.5rem 0.5rem 0.5rem !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Navegación más grande para táctil */
+  .react-datepicker__navigation-button {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1.8rem !important;
+  }
+  
+  /* Botones de acción más grandes */
+  .calendar-select-button, 
+  .calendar-cancel-button {
+    padding: 0.5rem 1.5rem !important;
+    font-size: 1rem !important;
+  }
+}
+
+/* Estado enfocado para todos los elementos interactivos */
+.react-datepicker button:focus-visible,
+.calendar-select-button:focus-visible,
+.calendar-cancel-button:focus-visible,
+.datepicker-dropdown:focus-visible {
+  outline: 2px solid rgb(var(--primary)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Transiciones suaves al cambiar de mes */
+.react-datepicker__month {
+  animation: fadeMonth 0.25s ease-out;
+}
+
+@keyframes fadeMonth {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejoras para dark mode */
+.dark .calendar-modal {
+  background-color: #1f2937 !important;
+  border-color: rgb(var(--primary)) !important;
+}
+
+.dark .calendar-select-button {
+  background-color: rgb(var(--primary)) !important;
+  color: white !important;
+}
+
+.dark .calendar-cancel-button {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark .calendar-cancel-button:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark .weekend-day {
+  color: rgba(var(--primary-light), 0.8) !important;
+}
+
+/* Mejoras de accesibilidad */
+.calendar-accessible:focus-within {
+  outline: 3px solid rgb(var(--primary)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Mejorar marcador de hoy */
+.react-datepicker__day--today {
+  font-weight: bold !important;
+  position: relative !important;
+}
+
+.react-datepicker__day--today::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
 }
