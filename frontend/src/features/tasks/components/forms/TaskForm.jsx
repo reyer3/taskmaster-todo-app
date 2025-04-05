@@ -291,11 +291,84 @@ const TaskForm = ({
               minDate={new Date()}
               showMonthDropdown
               showYearDropdown
+              yearDropdownItemNumber={10}
+              scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
+              popperPlacement="bottom-start"
+              popperModifiers={[
+                {
+                  name: "offset",
+                  options: {
+                    offset: [0, 8],
+                  },
+                },
+                {
+                  name: "preventOverflow",
+                  options: {
+                    rootBoundary: "viewport",
+                    tether: false,
+                    altAxis: true,
+                  },
+                },
+              ]}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="dark:bg-dark-bg-secondary dark:text-dark-text-primary"
+              calendarClassName="shadow-lg border border-gray-200 dark:border-gray-700"
+              renderCustomHeader={({
+                date,
+                changeYear,
+                changeMonth,
+                decreaseMonth,
+                increaseMonth,
+                prevMonthButtonDisabled,
+                nextMonthButtonDisabled,
+              }) => (
+                <div className="flex items-center justify-between px-2 py-2">
+                  <button 
+                    className="p-1 text-gray-700 hover:text-primary dark:text-gray-300 disabled:opacity-50" 
+                    onClick={decreaseMonth} 
+                    disabled={prevMonthButtonDisabled}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <div className="flex space-x-2">
+                    <select
+                      className="bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded py-1 text-sm pl-2 pr-6 appearance-none focus:outline-none"
+                      value={date.getMonth()}
+                      onChange={({ target: { value } }) => changeMonth(Number(value))}
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {date.toLocaleString('es', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="bg-white dark:bg-dark-bg-tertiary text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded py-1 text-sm pl-2 pr-6 appearance-none focus:outline-none"
+                      value={date.getFullYear()}
+                      onChange={({ target: { value } }) => changeYear(Number(value))}
+                    >
+                      {Array.from({ length: 10 }, (_, i) => (
+                        <option key={i} value={new Date().getFullYear() + i}>
+                          {new Date().getFullYear() + i}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button 
+                    className="p-1 text-gray-700 hover:text-primary dark:text-gray-300 disabled:opacity-50" 
+                    onClick={increaseMonth} 
+                    disabled={nextMonthButtonDisabled}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             />
           </div>
           {errors.dueDate && <p className="mt-1 text-sm text-red-500">{errors.dueDate}</p>}
