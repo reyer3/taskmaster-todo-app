@@ -12,7 +12,8 @@ class TaskRepository {
    */
   async findAllByUserId(userId) {
     const tasks = await prisma.task.findMany({
-      where: { userId }
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
     });
 
     return tasks.map(task => new Task(task));
@@ -69,6 +70,7 @@ class TaskRepository {
     await prisma.task.delete({
       where: { id }
     });
+    return true;
   }
 
   /**

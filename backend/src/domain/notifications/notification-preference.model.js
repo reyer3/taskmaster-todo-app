@@ -6,6 +6,10 @@
 
 class NotificationPreference {
   constructor(data) {
+    if (!data.userId) {
+      throw new Error('userId es requerido');
+    }
+    
     this.id = data.id;
     this.userId = data.userId;
     
@@ -114,31 +118,134 @@ class NotificationPreference {
   }
 
   /**
+   * Actualiza las preferencias de notificaciones por email
+   * @param {Object} preferences - Preferencias a actualizar
+   * @returns {NotificationPreference} Instancia actualizada
+   */
+  updateEmailPreferences(preferences) {
+    // Actualizar preferencias de email
+    Object.entries(preferences).forEach(([key, value]) => {
+      if (key in this && typeof value === 'boolean') {
+        this[key] = value;
+      }
+    });
+    this.updatedAt = new Date();
+    return this;
+  }
+
+  /**
+   * Actualiza las preferencias de notificaciones push
+   * @param {Object} preferences - Preferencias a actualizar
+   * @returns {NotificationPreference} Instancia actualizada
+   */
+  updatePushPreferences(preferences) {
+    // Actualizar preferencias de push
+    Object.entries(preferences).forEach(([key, value]) => {
+      if (key in this && typeof value === 'boolean') {
+        this[key] = value;
+      }
+    });
+    this.updatedAt = new Date();
+    return this;
+  }
+
+  /**
+   * Actualiza las preferencias de digestos
+   * @param {Object} preferences - Preferencias a actualizar
+   * @returns {NotificationPreference} Instancia actualizada
+   */
+  updateDigestPreferences(preferences) {
+    // Actualizar preferencias de digestos
+    Object.entries(preferences).forEach(([key, value]) => {
+      if (key in this && typeof value === 'boolean') {
+        this[key] = value;
+      }
+    });
+    this.updatedAt = new Date();
+    return this;
+  }
+
+  /**
+   * Habilita o deshabilita todas las notificaciones
+   * @param {boolean} enabled - Estado habilitado/deshabilitado
+   * @returns {NotificationPreference} Instancia actualizada
+   */
+  setAllNotifications(enabled) {
+    // Habilitar/deshabilitar todas las notificaciones
+    this.emailEnabled = enabled;
+    this.pushEnabled = enabled;
+    // Establecer todos los canales específicos
+    this.emailTaskCreated = enabled;
+    this.emailTaskCompleted = enabled;
+    this.emailTaskDueSoon = enabled;
+    this.pushTaskCreated = enabled;
+    this.pushTaskCompleted = enabled;
+    this.pushTaskDueSoon = enabled;
+    this.pushTaskUpdated = enabled;
+    this.pushTaskDeleted = enabled;
+    this.updatedAt = new Date();
+    return this;
+  }
+
+  /**
+   * Verifica si un tipo de evento está habilitado para un canal
+   * @param {string} eventType - Tipo de evento
+   * @param {string} channel - Canal (email, push)
+   * @returns {boolean} true si está habilitado
+   */
+  isEventTypeEnabled(eventType, channel) {
+    // Verificar si el canal existe y está habilitado
+    if (!this[`${channel}Enabled`]) {
+      return false;
+    }
+    
+    // Mapping para eventos específicos a sus claves de preferencia
+    const eventMapping = {
+      'task.created': {
+        email: 'emailTaskCreated',
+        push: 'pushTaskCreated'
+      },
+      'task.completed': {
+        email: 'emailTaskCompleted',
+        push: 'pushTaskCompleted'
+      },
+      'task.due_soon': {
+        email: 'emailTaskDueSoon',
+        push: 'pushTaskDueSoon'
+      }
+    };
+    
+    // Si hay un mapeo directo, usámoslo
+    if (eventMapping[eventType] && eventMapping[eventType][channel]) {
+      return this[eventMapping[eventType][channel]] === true;
+    }
+    
+    // Intento de crear dinámicamente el nombre de la propiedad
+    const eventKey = eventType.replace('.', '');
+    const preferenceKey = `${channel}${eventKey.charAt(0).toUpperCase() + eventKey.slice(1)}`;
+    
+    return this[preferenceKey] === true;
+  }
+
+  /**
    * Crea una representación simple para enviar al cliente
    * @returns {Object} Objeto simplificado
    */
   toDTO() {
     return {
-      id: this.id,
       userId: this.userId,
-      email: {
-        enabled: this.emailEnabled,
-        taskCreated: this.emailTaskCreated,
-        taskDueSoon: this.emailTaskDueSoon,
-        taskCompleted: this.emailTaskCompleted
-      },
-      push: {
-        enabled: this.pushEnabled,
-        taskCreated: this.pushTaskCreated,
-        taskUpdated: this.pushTaskUpdated,
-        taskCompleted: this.pushTaskCompleted,
-        taskDeleted: this.pushTaskDeleted,
-        taskDueSoon: this.pushTaskDueSoon
-      },
-      digests: {
-        daily: this.dailyDigest,
-        weekly: this.weeklyDigest
-      }
+      emailEnabled: this.emailEnabled,
+      pushEnabled: this.pushEnabled,
+      emailTaskCreated: this.emailTaskCreated,
+      emailTaskCompleted: this.emailTaskCompleted,
+      emailTaskDueSoon: this.emailTaskDueSoon,
+      pushTaskCreated: this.pushTaskCreated,
+      pushTaskCompleted: this.pushTaskCompleted,
+      pushTaskDueSoon: this.pushTaskDueSoon,
+      pushTaskUpdated: this.pushTaskUpdated,
+      pushTaskDeleted: this.pushTaskDeleted,
+      dailyDigest: this.dailyDigest,
+      weeklyDigest: this.weeklyDigest
     };
   }
 

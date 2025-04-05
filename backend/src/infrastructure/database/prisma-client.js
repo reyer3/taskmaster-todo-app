@@ -3,14 +3,38 @@
  * Este archivo centraliza la configuración y exportación del cliente Prisma
  */
 const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const fs = require('fs');
 
-// Creación de una instancia única de PrismaClient
-const prisma = new PrismaClient({
-  // Configuración de logging para entornos de desarrollo
+// Cargar variables de entorno específicas según el entorno
+if (process.env.NODE_ENV === 'test') {
+  const envTestPath = path.resolve(process.cwd(), '.env.test');
+  if (fs.existsSync(envTestPath)) {
+    require('dotenv').config({ path: envTestPath });
+    console.log('Loaded test environment variables from .env.test');
+  }
+}
+
+// Verificar que DATABASE_URL esté definida
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL no está definida en las variables de entorno');
+}
+
+// Opción para prevenir conexiones reales a la DB durante las pruebas
+const prismaOptions = {
+  datasources: process.env.NODE_ENV === 'test' ? {} : {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  },
+  // Configuración de logging
   log: process.env.NODE_ENV === 'development' 
     ? ['query', 'info', 'warn', 'error']
     : ['error'],
-});
+};
+
+// Creación de una instancia única de PrismaClient
+const prisma = new PrismaClient(prismaOptions);
 
 // Manejo de conexión y desconexión
 const connect = async () => {

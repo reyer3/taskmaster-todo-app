@@ -251,7 +251,7 @@ router.post('/change-password', authMiddleware, async (req, res, next) => {
       throw new ValidationError('La contraseña debe contener al menos un número');
     }
 
-    await authService.changePassword(userId, currentPassword, newPassword);
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
 
     res.json({
       status: 'success',
@@ -273,15 +273,14 @@ router.post('/change-password', authMiddleware, async (req, res, next) => {
  */
 router.post('/refresh-token', async (req, res, next) => {
   try {
-    // Obtener refresh token de cookies o del cuerpo de la solicitud
-    const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
-
+    const { refreshToken } = req.body;
+    
     if (!refreshToken) {
       throw new ValidationError('Refresh token es requerido');
     }
-
+    
     const result = await authService.refreshToken(refreshToken);
-
+    
     res.json({
       status: 'success',
       data: {

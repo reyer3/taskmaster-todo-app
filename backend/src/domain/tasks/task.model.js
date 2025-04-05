@@ -45,6 +45,7 @@ class Task {
    */
   validate() {
     this._validateTitle(this.title);
+    this._validateId(this.id);
     this._validateUserId(this.userId);
 
     if (this.dueDate && this.dueDate < new Date(new Date().setHours(0, 0, 0, 0))) {
@@ -60,11 +61,23 @@ class Task {
    */
   _validateTitle(title) {
     if (!title || title.trim().length === 0) {
-      throw new Error('El título de la tarea es obligatorio');
+      throw new Error('El título de la tarea no puede estar vacío');
     }
 
     if (title.length > 100) {
       throw new Error('El título no puede exceder los 100 caracteres');
+    }
+  }
+
+  /**
+   * Valida que el ID sea válido
+   * @param {string} id - ID a validar
+   * @throws {Error} Si el ID no es válido
+   * @private
+   */
+  _validateId(id) {
+    if (!id || id.trim().length === 0) {
+      throw new Error('El ID de la tarea no puede estar vacío');
     }
   }
 
@@ -76,7 +89,7 @@ class Task {
    */
   _validateUserId(userId) {
     if (!userId) {
-      throw new Error('La tarea debe pertenecer a un usuario');
+      throw new Error('El ID de usuario no puede estar vacío');
     }
   }
 
@@ -88,6 +101,9 @@ class Task {
    */
   _validatePriority(priority) {
     const validPriorities = ['none', 'low', 'medium', 'high'];
+    if (priority && !validPriorities.includes(priority)) {
+      throw new Error('Prioridad inválida');
+    }
     return validPriorities.includes(priority) ? priority : 'none';
   }
 
@@ -108,6 +124,30 @@ class Task {
   incomplete() {
     this.completed = false;
     this.updatedAt = new Date();
+    return this;
+  }
+
+  /**
+   * Marca la tarea como completada (alias para complete)
+   * @returns {Task} La instancia actual para encadenamiento
+   */
+  markAsCompleted() {
+    if (!this.completed) {
+      this.completed = true;
+      this.updatedAt = new Date();
+    }
+    return this;
+  }
+
+  /**
+   * Marca la tarea como incompleta (alias para incomplete)
+   * @returns {Task} La instancia actual para encadenamiento
+   */
+  markAsIncomplete() {
+    if (this.completed) {
+      this.completed = false;
+      this.updatedAt = new Date();
+    }
     return this;
   }
 
@@ -140,6 +180,10 @@ class Task {
    * @returns {Task} La instancia actual para encadenamiento
    */
   updateCategory(newCategory) {
+    const validCategories = ['personal', 'trabajo', 'estudio', 'salud', 'finanzas', 'otros'];
+    if (newCategory && !validCategories.includes(newCategory)) {
+      throw new Error('Categoría inválida');
+    }
     this.category = newCategory || 'personal';
     this.updatedAt = new Date();
     return this;
@@ -162,6 +206,9 @@ class Task {
    * @returns {Task} La instancia actual para encadenamiento
    */
   updateDueDate(newDueDate) {
+    if (newDueDate !== null && !(newDueDate instanceof Date) && isNaN(new Date(newDueDate).getTime())) {
+      throw new Error('La fecha de vencimiento debe ser una fecha válida o null');
+    }
     this.dueDate = newDueDate ? new Date(newDueDate) : null;
     this.updatedAt = new Date();
     return this;
@@ -233,10 +280,7 @@ class Task {
       category: this.category,
       priority: this.priority,
       dueDate: this.dueDate,
-      userId: this.userId,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      isOverdue: this.isOverdue(),
+      userId: this.userId
     };
   }
 
@@ -251,4 +295,4 @@ class Task {
   }
 }
 
-module.exports = Task;
+module.exports = { Task };
