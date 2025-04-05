@@ -28,6 +28,7 @@ async function gracefulShutdown() {
 // Manejo de eventos de cierre
 process.on('SIGINT', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
+console.log("DATABASE_URL en test:", process.env.DATABASE_URL);
 
 // Inicializar componentes y arrancar servidor
 async function startServer() {
