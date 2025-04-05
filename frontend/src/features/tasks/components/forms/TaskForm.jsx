@@ -117,9 +117,28 @@ const TaskForm = ({
         ...formData,
         // Convertir tags de string a array
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
-        // Mantener ID solo si estamos editando
-        id: task?.id
       };
+      
+      // Ajustar la fecha de vencimiento si es la fecha actual
+      if (formData.dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Inicio del día actual
+        
+        const selectedDate = new Date(formData.dueDate);
+        selectedDate.setHours(0, 0, 0, 0); // Inicio del día seleccionado
+        
+        // Si la fecha seleccionada es hoy, ajustar al final del día
+        if (selectedDate.getTime() === today.getTime()) {
+          const endOfDay = new Date(selectedDate);
+          endOfDay.setHours(23, 59, 59, 999); // Final del día
+          processedData.dueDate = endOfDay.toISOString();
+        }
+      }
+      
+      // Mantener ID solo si estamos editando
+      if (task?.id) {
+        processedData.id = task.id;
+      }
       
       onSubmit(processedData);
     }
