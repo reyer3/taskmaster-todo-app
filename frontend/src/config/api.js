@@ -6,7 +6,7 @@
 // URL base de la API (cambiará según el entorno)
 export const API_BASE_URL = import.meta.env.MODE === 'production'
   ? 'https://api.taskmaster-app.com/api'
-  : 'http://localhost:3001/api';
+  : 'http://localhost:4000/api';
 
 // Para obtener directamente de variables de entorno de Vite si están definidas
 export const API_URL_ENV = import.meta.env.VITE_API_URL;
