@@ -12,7 +12,7 @@ import { getDashboardStats, searchTasks } from '../services/dashboard.service';
  */
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const [stats, setStats] = useState({
     totalTasks: 0,
     completedTasks: 0,
@@ -39,7 +39,7 @@ const DashboardPage = () => {
         setIsLoading(false);
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
-        addToast({
+        showToast({
           type: 'error',
           title: 'Error',
           message: 'No se pudieron cargar los datos del dashboard'
@@ -49,7 +49,7 @@ const DashboardPage = () => {
     };
 
     loadDashboardData();
-  }, [addToast]);
+  }, [showToast]);
 
   const handleFilterChange = async (filters) => {
     try {
@@ -59,14 +59,14 @@ const DashboardPage = () => {
       const results = await searchTasks(filters);
       setFilteredResults(results);
       
-      addToast({
+      showToast({
         type: 'info',
         title: 'Filtros aplicados',
         message: `Se encontraron ${results.length} resultados`
       });
     } catch (error) {
       console.error('Error al aplicar filtros:', error);
-      addToast({
+      showToast({
         type: 'error',
         title: 'Error',
         message: 'No se pudieron aplicar los filtros'
