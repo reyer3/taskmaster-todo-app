@@ -412,14 +412,44 @@
 
 /* Posicionamiento del calendario */
 .react-datepicker-popper {
-  z-index: 99 !important;
+  z-index: 9999 !important;
   margin-top: 12px !important;
+  position: fixed !important;
+  left: auto !important;
+  transform: none !important;
+  top: auto !important;
+}
+
+/* Contenedor personalizado para el popper */
+.datepicker-popper-container {
+  position: absolute;
+  z-index: 9999;
+  width: max-content;
+}
+
+/* Clase adicional para el popper */
+.datepicker-popper {
   position: absolute !important;
+  inset: auto !important;
+  transform: none !important;
+}
+
+/* Clase adicional para el calendario */
+.datepicker-calendar {
+  position: relative !important;
 }
 
 /* Ajuste del triángulo */
 .react-datepicker__triangle {
   left: 50px !important;
+}
+
+/* Corregir overflow del input padre */
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  display: block !important;
+  width: 100% !important;
+  overflow: visible !important;
 }
 
 /* Personalización del encabezado */

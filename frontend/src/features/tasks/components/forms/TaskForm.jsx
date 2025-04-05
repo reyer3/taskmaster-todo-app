@@ -295,14 +295,17 @@ const TaskForm = ({
               scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
-              popperPlacement="bottom-start"
-              closeOnScroll={false}
-              shouldCloseOnSelect={false}
+              popperPlacement="auto"
+              closeOnScroll={true}
+              shouldCloseOnSelect={true}
+              popperContainer={({ children }) => (
+                <div className="datepicker-popper-container">{children}</div>
+              )}
               popperModifiers={[
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 12],
+                    offset: [0, 15],
                   },
                 },
                 {
@@ -332,7 +335,8 @@ const TaskForm = ({
               }}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base"
+              calendarClassName="shadow-xl border-0 text-base datepicker-calendar"
+              popperClassName="datepicker-popper"
               fixedHeight
               renderCustomHeader={({
                 date,
