@@ -98,9 +98,23 @@ const TaskForm = ({
       }));
     }
 
-    // Si se seleccionó una fecha, hacer scroll al siguiente campo
+    // Cerrar manualmente el calendario cuando se selecciona una fecha
     if (date) {
+      // Dar tiempo para que el usuario vea la fecha seleccionada 
+      // antes de cerrar el calendario
       setTimeout(() => {
+        // Cerrar el calendario manualmente simulando un clic fuera
+        const datePickerInput = document.getElementById('dueDate');
+        if (datePickerInput) {
+          datePickerInput.blur();
+          
+          // Ocultar DatePicker manualmente
+          const datepickerContainer = document.querySelector('.react-datepicker-popper');
+          if (datepickerContainer) {
+            datepickerContainer.style.display = 'none';
+          }
+        }
+        
         // Intentar enfocar el siguiente campo (etiquetas)
         const tagsField = document.getElementById('tags');
         if (tagsField) {
@@ -113,7 +127,7 @@ const TaskForm = ({
             });
           }
         }
-      }, 50);
+      }, 300); // Retraso suficiente para ver la fecha seleccionada
     }
   };
   
@@ -298,7 +312,7 @@ const TaskForm = ({
           >
             Fecha de vencimiento
           </label>
-          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-visible focus-within:ring-2 focus-within:ring-primary relative`}>
+          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md focus-within:ring-2 focus-within:ring-primary relative`}>
             <DatePicker
               id="dueDate"
               selected={formData.dueDate}
@@ -315,12 +329,25 @@ const TaskForm = ({
               todayButton="Hoy"
               popperPlacement="auto"
               autoComplete="off"
+              closeOnSelect={false}
+              shouldCloseOnSelect={false}
+              onClickOutside={() => {
+                // Solo cerrar el calendario si se hace clic fuera del calendario y del input
+                const calendarElement = document.querySelector('.react-datepicker');
+                if (calendarElement) {
+                  // Mantener el calendario abierto hasta que se seleccione una fecha
+                  // o se haga clic explícitamente fuera
+                }
+              }}
               onCalendarOpen={() => {
                 // Forzar posicionamiento inteligente del calendario
                 setTimeout(() => {
                   const input = document.getElementById('dueDate');
                   const calendar = document.querySelector('.react-datepicker');
                   if (input && calendar) {
+                    // Ajustar estilos para mejorar posicionamiento
+                    calendar.style.zIndex = "9999";
+                    
                     const inputRect = input.getBoundingClientRect();
                     const spaceBelow = window.innerHeight - inputRect.bottom;
                     const spaceAbove = inputRect.top;
@@ -355,7 +382,7 @@ const TaskForm = ({
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 5],
+                    offset: [0, 10],
                   },
                 },
                 {
@@ -365,11 +392,17 @@ const TaskForm = ({
                     padding: 8,
                   },
                 },
+                {
+                  name: "computeStyles",
+                  options: {
+                    gpuAcceleration: false, // Mejor posicionamiento en algunos navegadores
+                  },
+                },
               ]}
-              shouldCloseOnSelect={true}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base calendar-compact"
+              calendarClassName="shadow-xl border-0 text-base calendar-compact calendar-float"
+              popperClassName="datepicker-popper-float"
               fixedHeight
               renderCustomHeader={({
                 date,

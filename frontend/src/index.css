@@ -532,3 +532,80 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Calendario flotante por encima del input */
+.calendar-float {
+  position: relative !important;
+  z-index: 9999 !important;
+}
+
+.datepicker-popper-float {
+  z-index: 9999 !important;
+  position: absolute !important;
+  transform: translate3d(0, 0, 0) !important;
+  will-change: transform !important;
+  top: auto !important;
+  left: auto !important;
+}
+
+/* Asegurar que el contenedor del input no oculta el calendario */
+.react-datepicker-wrapper {
+  width: 100%;
+  position: static !important;
+}
+
+.react-datepicker__input-container {
+  position: static !important;
+}
+
+/* Estilos para mantener el calendario visible */
+.react-datepicker-popper {
+  z-index: 9999 !important;
+  margin-top: 10px !important;
+}
+
+/* Mejorar visibilidad del calendario con un borde más visible */
+.react-datepicker {
+  font-family: inherit !important;
+  border: 2px solid rgb(var(--primary)) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 10px !important;
+  overflow: visible !important;
+  font-size: 0.95rem !important;
+}
+
+/* Mejorar el triángulo indicador */
+.react-datepicker__triangle {
+  position: absolute !important;
+  left: 50px !important;
+  z-index: 9999 !important;
+}
+
+.react-datepicker__triangle:before,
+.react-datepicker__triangle:after {
+  border-bottom-color: rgb(var(--primary)) !important;
+  z-index: 9999 !important;
+}
+
+/* Asegurar que los días del calendario sean más visibles */
+.react-datepicker__day--selected {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Animación de aparición suave para el calendario */
+.react-datepicker {
+  animation: calendarAppear 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  transform-origin: top center;
+}
+
+@keyframes calendarAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
