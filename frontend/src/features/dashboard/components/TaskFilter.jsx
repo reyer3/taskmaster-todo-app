@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useDebounce from '../../../hooks/useDebounce';
 
 /**
@@ -15,35 +15,62 @@ const TaskFilter = ({ onFilterChange }) => {
   
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
+  // Referencia para saber si es la primera renderización
+  const isFirstRender = useRef(true);
+  
   // Aplicar debounce al término de búsqueda para evitar peticiones innecesarias
-  const debouncedSearchQuery = useDebounce(filters.searchQuery, 500);
+  // Requiere al menos 2 caracteres para iniciar la búsqueda
+  const debouncedSearchQuery = useDebounce(filters.searchQuery, 800, 2);
   
   // Detectar cambios en la búsqueda con debounce y aplicar los filtros
   useEffect(() => {
-    if (onFilterChange) {
-      onFilterChange({
-        ...filters,
-        searchQuery: debouncedSearchQuery
-      });
+    // Evitar la búsqueda en la primera renderización
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-  }, [debouncedSearchQuery, filters.status, filters.priority, filters.dateRange]);
+    
+    // Solo aplicar filtros si hay un término de búsqueda válido o está completamente vacío
+    if ((debouncedSearchQuery && debouncedSearchQuery.length >= 2) || debouncedSearchQuery === '') {
+      if (onFilterChange) {
+        onFilterChange({
+          ...filters,
+          searchQuery: debouncedSearchQuery
+        });
+      }
+    }
+  }, [debouncedSearchQuery, filters]);
+  
+  // Aplicar otros filtros (no el de búsqueda) cuando cambian
+  useEffect(() => {
+    if (isFirstRender.current) return;
+    
+    // Evitar aplicar la búsqueda aquí, ya que se maneja en el otro useEffect
+    const { searchQuery, ...otherFilters } = filters;
+    onFilterChange({
+      ...otherFilters,
+      searchQuery: debouncedSearchQuery // Usar el valor con debounce
+    });
+  }, [filters.status, filters.priority, filters.dateRange]);
   
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
+    
+    // Si es la búsqueda, solo actualizamos el estado local
+    if (name === 'searchQuery') {
+      setFilters(prev => ({ ...prev, [name]: value }));
+      return;
+    }
+    
+    // Para otros filtros, actualizamos el estado
     const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
-    
-    // Para filtros que no son de búsqueda, aplicar inmediatamente
-    // La búsqueda se aplicará con debounce a través del useEffect
-    if (name !== 'searchQuery' && onFilterChange) {
-      onFilterChange(newFilters);
-    }
   };
   
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Al enviar el formulario, aplicar los filtros inmediatamente
-    if (onFilterChange) {
+    // Al enviar el formulario, aplicar los filtros inmediatamente si hay texto
+    if (filters.searchQuery.trim().length > 0 && onFilterChange) {
       onFilterChange(filters);
     }
   };
@@ -83,11 +110,16 @@ const TaskFilter = ({ onFilterChange }) => {
           <button
             type="submit"
             className="bg-primary text-white px-4 py-2 rounded-r-lg hover:bg-primary-dark transition-colors"
+            disabled={filters.searchQuery.trim().length < 2}
           >
             Buscar
           </button>
         </div>
-        {debouncedSearchQuery && debouncedSearchQuery !== filters.searchQuery && (
+        {filters.searchQuery && filters.searchQuery.trim().length < 2 ? (
+          <p className="text-xs text-yellow-500 dark:text-yellow-400 mt-1">
+            Escribe al menos 2 caracteres para buscar
+          </p>
+        ) : filters.searchQuery && debouncedSearchQuery !== filters.searchQuery && (
           <p className="text-xs text-gray-500 mt-1 animate-pulse">Buscando...</p>
         )}
       </form>
