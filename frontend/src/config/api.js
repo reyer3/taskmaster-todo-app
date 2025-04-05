@@ -4,15 +4,18 @@
  */
 
 // URL base de la API (cambiará según el entorno)
-export const API_BASE_URL = process.env.NODE_ENV === 'production'
+export const API_BASE_URL = import.meta.env.MODE === 'production'
   ? 'https://api.taskmaster-app.com/api'
   : 'http://localhost:3001/api';
+
+// Para obtener directamente de variables de entorno de Vite si están definidas
+export const API_URL_ENV = import.meta.env.VITE_API_URL;
 
 // Versión de la API
 export const API_VERSION = 'v1';
 
-// URL completa base
-export const API_URL = `${API_BASE_URL}/${API_VERSION}`;
+// URL completa base - usando variables de entorno de Vite si están disponibles
+export const API_URL = import.meta.env.VITE_API_URL || `${API_BASE_URL}/${API_VERSION}`;
 
 // Timeout para las peticiones (en milisegundos)
 export const API_TIMEOUT = 15000;

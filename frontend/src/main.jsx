@@ -8,6 +8,12 @@ import { AuthProvider } from './context/AuthContext'
 import { TasksProvider } from './context/TasksContext'
 import { ToastProvider } from './context/ToastContext'
 
+// Ya no necesitamos esta inicialización porque la hace el hook useTheme
+// const initializeTheme = () => {
+//   ...
+// };
+// initializeTheme();
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

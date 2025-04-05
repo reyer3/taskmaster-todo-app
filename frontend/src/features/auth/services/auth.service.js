@@ -36,7 +36,16 @@ export const registerUser = async (userData) => {
  * @returns {Promise<Object>} Datos del usuario
  */
 export const getCurrentUser = async () => {
-  return await apiClient.get('/auth/me');
+  try {
+    console.log('Llamando al endpoint /auth/me...');
+    const response = await apiClient.get('/auth/me');
+    console.log('Respuesta de /auth/me:', response);
+    return response;
+  } catch (error) {
+    console.error('Error en getCurrentUser:', error);
+    // No re-lanzamos el error para que Auth context lo pueda manejar adecuadamente
+    return null;
+  }
 };
 
 /**

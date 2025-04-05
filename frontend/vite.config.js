@@ -18,5 +18,12 @@ export default defineConfig({
       // Podemos añadir alias para rutas (opcional)
       '@': '/src'
     }
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      loader: {
+        '.js': 'jsx'
+      }
+    }
   }
 }) 

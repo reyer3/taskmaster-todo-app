@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -21,6 +22,22 @@ export default {
         warning: '#ff9800',
         error: '#f44336',
         info: '#2196f3',
+        dark: {
+          bg: {
+            primary: '#121212',
+            secondary: '#1e1e1e',
+            tertiary: '#2d2d2d'
+          },
+          card: '#1e1e1e',
+          input: '#2a2a42',
+          surface: '#232338',
+          text: {
+            primary: '#e0e0e0',
+            secondary: '#a0a0a0'
+          },
+          border: '#3d3d3d',
+          accent: '#6366f1'
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
@@ -57,6 +74,8 @@ export default {
       boxShadow: {
         'task': '0 2px 5px 0 rgba(0, 0, 0, 0.05)',
         'hover': '0 4px 12px 0 rgba(0, 0, 0, 0.08)',
+        'dark-task': '0 2px 5px 0 rgba(0, 0, 0, 0.3)',
+        'dark-hover': '0 4px 12px 0 rgba(0, 0, 0, 0.3)'
       },
     },
   },
