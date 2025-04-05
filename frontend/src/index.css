@@ -923,3 +923,22 @@
   border-radius: 50%;
   background-color: currentColor;
 }
+
+/* Estilos para React DatePicker - Solo encabezado con color primario */
+.react-datepicker__header {
+  background-color: rgb(var(--primary)) !important;
+  border-bottom: none !important;
+  color: white !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: white !important;
+}
+
+.react-datepicker__navigation-icon::before,
+.react-datepicker__navigation:hover *::before {
+  border-color: white !important;
+}
+
+/* Mantener todos los demás estilos por defecto */
