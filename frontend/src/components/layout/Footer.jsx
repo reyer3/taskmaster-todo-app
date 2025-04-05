@@ -8,7 +8,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="bg-white dark:bg-dark-bg-secondary border-t border-gray-200 dark:border-dark-border mt-auto transition-colors duration-300">
+    <footer className="bg-white dark:bg-dark-bg-secondary border-t border-gray-200 dark:border-dark-border w-full transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>

@@ -46,7 +46,7 @@ const Layout = ({
               ${displaySidebar ? 'lg:ml-64' : ''}
               ${contentClassName}
               ${isPublicRoute ? 'bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-dark-bg-secondary dark:to-dark-bg-tertiary' : ''}
-              pt-6 pb-16`}
+              pt-6 pb-8`}
           >
             <div className={`
               mx-auto px-4 sm:px-6 
@@ -58,7 +58,11 @@ const Layout = ({
           </main>
         </div>
         
-        {showFooter && <Footer />}
+        {showFooter && (
+          <div className={`relative z-10 ${displaySidebar ? 'lg:ml-64' : ''} transition-all duration-300`}>
+            <Footer />
+          </div>
+        )}
       </div>
     </LayoutContext.Provider>
   );

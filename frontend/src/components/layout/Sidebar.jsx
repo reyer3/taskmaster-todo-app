@@ -81,14 +81,14 @@ const Sidebar = () => {
       </button>
       
       <aside 
-        className={`bg-white text-gray-800 h-screen fixed left-0 top-0 pt-20 transition-all duration-300 shadow-md z-40 border-r border-gray-200
+        className={`bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary fixed left-0 top-0 bottom-0 pt-20 pb-4 transition-all duration-300 shadow-md z-40 border-r border-gray-200 dark:border-dark-border overflow-y-auto
           ${collapsed ? 'w-20' : 'w-64'} 
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="h-full flex flex-col">
           <button 
             onClick={toggleCollapsed} 
-            className="absolute top-24 -right-3 bg-white w-6 h-6 rounded-full shadow-md flex items-center justify-center text-primary border border-gray-200 hidden lg:flex"
+            className="absolute top-24 -right-3 bg-white dark:bg-dark-bg-tertiary w-6 h-6 rounded-full shadow-md flex items-center justify-center text-primary border border-gray-200 dark:border-dark-border hidden lg:flex"
             aria-label={collapsed ? "Expandir" : "Colapsar"}
           >
             {collapsed ? '→' : '←'}
