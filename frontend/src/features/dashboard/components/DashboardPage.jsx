@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../context/ToastContext';
 import RecentTasksWidget from './RecentTasksWidget';
@@ -29,6 +29,10 @@ const DashboardPage = () => {
     timestamp: 0
   });
   const [isReady, setIsReady] = useState(false);
+  const [hasSearch, setHasSearch] = useState(false);
+  
+  // Referencia al contenedor de resultados para hacer scroll automático
+  const resultsRef = useRef(null);
 
   // Cargar datos iniciales del dashboard
   useEffect(() => {
@@ -65,6 +69,17 @@ const DashboardPage = () => {
     loadDashboardData();
   }, [showError]);
 
+  // Efectuar scroll a la sección de resultados cuando se encuentran coincidencias
+  useEffect(() => {
+    // Si tenemos resultados y ha habido una búsqueda, hacer scroll
+    if (filteredResults.length > 0 && hasSearch && resultsRef.current) {
+      // Pequeño retraso para asegurar que el DOM está actualizado
+      setTimeout(() => {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [filteredResults, hasSearch]);
+
   // Handler para filtros con protección contra llamadas prematuras
   const handleFilterChange = useCallback(async (filters) => {
     // Protección crítica: no procesar búsquedas hasta que el componente esté listo
@@ -81,9 +96,11 @@ const DashboardPage = () => {
         filters.priority || 
         (filters.dateRange && filters.dateRange !== 'all');
       
-      // Si no hay filtros activos, mostrar un conjunto vacío de resultados
-      // esto evita búsquedas innecesarias al cargar
-      if (!hasActiveFilters) {
+      // Marcar que se está realizando una búsqueda explícita
+      if (hasActiveFilters) {
+        setHasSearch(true);
+      } else {
+        setHasSearch(false);
         setFilteredResults([]);
         return;
       }
@@ -113,7 +130,11 @@ const DashboardPage = () => {
       
       // Notificar solo para búsquedas explícitas con texto
       if (searchTerm && startTime - searchMeta.timestamp > 1000) {
-        success(`Se encontraron ${results.length} resultados`);
+        if (results.length > 0) {
+          success(`Se encontraron ${results.length} resultados`);
+        } else {
+          showToast('No se encontraron coincidencias para tu búsqueda', 'warning');
+        }
       }
     } catch (error) {
       console.error('Error al aplicar filtros:', error);
@@ -185,10 +206,19 @@ const DashboardPage = () => {
       </div>
 
       {/* Resultados de búsqueda/filtrado */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div 
+        ref={resultsRef}
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${
+          filteredResults.length > 0 && hasSearch 
+            ? 'ring-2 ring-primary transition-all duration-300' 
+            : ''
+        }`}
+      >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-            {filteredResults.length > 0 ? 'Resultados de búsqueda' : 'Tareas recientes'}
+            {filteredResults.length > 0 && hasSearch 
+              ? `Resultados de búsqueda (${filteredResults.length})`
+              : 'Tareas recientes'}
           </h2>
           {isSearching && (
             <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -210,7 +240,7 @@ const DashboardPage = () => {
               </thead>
               <tbody>
                 {filteredResults.map(task => (
-                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700">
+                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
                     <td className="py-3">
                       <span className={`px-2 py-1 rounded-full text-xs ${
@@ -230,6 +260,12 @@ const DashboardPage = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : hasSearch ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p className="mb-2 text-2xl">🔍</p>
+            <p className="text-lg font-medium">No se encontraron resultados</p>
+            <p className="text-sm mt-2">Intenta con diferentes términos de búsqueda o filtros</p>
           </div>
         ) : isReady && recentTasks.length > 0 ? (
           <div className="overflow-x-auto">
@@ -266,9 +302,9 @@ const DashboardPage = () => {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p className="mb-2 text-2xl">🔍</p>
-            <p className="text-lg font-medium">No se encontraron resultados</p>
-            <p className="text-sm mt-2">Intenta con diferentes términos de búsqueda o filtros</p>
+            <p className="mb-2 text-2xl">📋</p>
+            <p className="text-lg font-medium">No hay tareas recientes</p>
+            <p className="text-sm mt-2">Crea nuevas tareas para verlas aquí</p>
           </div>
         )}
       </div>

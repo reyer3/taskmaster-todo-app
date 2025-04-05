@@ -14,6 +14,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
   });
   
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeSearch, setActiveSearch] = useState(false);
   
   // Referencia para saber si es la primera renderización
   const isFirstRender = useRef(true);
@@ -45,12 +46,19 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
     
     // Solo aplicar filtros si hay un término de búsqueda válido o está completamente vacío
     if ((debouncedSearchQuery && debouncedSearchQuery.length >= 2) || debouncedSearchQuery === '') {
+      // Activar indicador visual de búsqueda activa
+      if (debouncedSearchQuery || filters.status || filters.priority || filters.dateRange !== 'all') {
+        setActiveSearch(true);
+      } else {
+        setActiveSearch(false);
+      }
+      
       onFilterChange({
         ...filters,
         searchQuery: debouncedSearchQuery
       });
     }
-  }, [debouncedSearchQuery, disabled, onFilterChange]); 
+  }, [debouncedSearchQuery, disabled, onFilterChange, filters]); 
   
   // Aplicar otros filtros (no el de búsqueda) cuando cambian
   useEffect(() => {
@@ -75,6 +83,13 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
       ...otherFilters,
       searchQuery: debouncedSearchQuery // Usar el valor con debounce
     });
+    
+    // Activar indicador visual de búsqueda activa
+    if (filters.status || filters.priority || filters.dateRange !== 'all' || debouncedSearchQuery) {
+      setActiveSearch(true);
+    } else {
+      setActiveSearch(false);
+    }
   }, [filters.status, filters.priority, filters.dateRange, disabled, onFilterChange, debouncedSearchQuery]);
   
   const handleFilterChange = (e) => {
@@ -107,6 +122,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
     
     // Al enviar el formulario, aplicar los filtros inmediatamente si hay texto
     if (filters.searchQuery.trim().length > 0) {
+      setActiveSearch(true);
       onFilterChange(filters);
     }
   };
@@ -127,14 +143,20 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
       dateRange: 'all'
     };
     setFilters(resetFilters);
+    setActiveSearch(false);
     
     onFilterChange(resetFilters);
   };
   
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${disabled ? 'opacity-75' : ''}`}>
-      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-        Buscar y Filtrar
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${disabled ? 'opacity-75' : ''} ${activeSearch ? 'border-l-4 border-primary' : ''}`}>
+      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+        <span>Buscar y Filtrar</span>
+        {activeSearch && (
+          <span className="ml-2 px-2 py-1 bg-primary-light text-primary text-xs rounded-md">
+            Búsqueda activa
+          </span>
+        )}
       </h2>
       
       {/* Formulario de búsqueda */}
@@ -144,7 +166,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
             type="text"
             name="searchQuery"
             placeholder="Buscar tareas..."
-            className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className={`flex-grow px-4 py-2 border ${activeSearch ? 'border-primary' : 'border-gray-300 dark:border-gray-600'} rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white`}
             value={filters.searchQuery}
             onChange={handleFilterChange}
             autoComplete="off"
@@ -170,6 +192,22 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
           <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
             Cargando datos iniciales...
           </p>
+        )}
+        
+        {activeSearch && (
+          <div className="mt-2 text-xs text-primary-dark">
+            <p>
+              {Object.entries(filters).filter(([key, value]) => 
+                (key === 'searchQuery' && value) || 
+                (key !== 'searchQuery' && value && value !== 'all')).length > 0 
+                ? 'Filtros aplicados: ' 
+                : ''}
+              {filters.searchQuery && <span className="mr-2 px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Texto: "{filters.searchQuery}"</span>}
+              {filters.status && <span className="mr-2 px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Estado: {filters.status}</span>}
+              {filters.priority && <span className="mr-2 px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Prioridad: {filters.priority}</span>}
+              {filters.dateRange !== 'all' && <span className="mr-2 px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Fecha: {filters.dateRange}</span>}
+            </p>
+          </div>
         )}
       </form>
       
@@ -208,7 +246,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
               name="status"
               value={filters.status}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${filters.status ? 'border-primary' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white`}
               disabled={disabled}
             >
               <option value="">Todos</option>
@@ -228,7 +266,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
               name="priority"
               value={filters.priority}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${filters.priority ? 'border-primary' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white`}
               disabled={disabled}
             >
               <option value="">Todas</option>
@@ -247,7 +285,7 @@ const TaskFilter = ({ onFilterChange, disabled = false }) => {
               name="dateRange"
               value={filters.dateRange}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${filters.dateRange !== 'all' ? 'border-primary' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white`}
               disabled={disabled}
             >
               <option value="all">Todas las fechas</option>
