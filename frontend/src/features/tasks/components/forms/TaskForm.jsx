@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
+// Mapeo de prioridades para mostrar en español pero enviar en inglés al API
+const PRIORITY_MAP = {
+  'high': 'Alta',
+  'medium': 'Media',
+  'low': 'Baja',
+  'none': 'Sin prioridad'
+};
+
+// Mapeo inverso para convertir de español a inglés
+const PRIORITY_MAP_REVERSE = {
+  'Alta': 'high',
+  'Media': 'medium',
+  'Baja': 'low',
+  'Sin prioridad': 'none'
+};
+
 /**
  * Formulario para crear o editar tareas
  */
@@ -10,7 +26,7 @@ const TaskForm = ({
   onSubmit,
   onCancel,
   categories = ['personal', 'trabajo', 'estudio'],
-  priorities = ['alta', 'media', 'baja', 'none'],
+  priorities = ['high', 'medium', 'low', 'none'],
   loading = false
 }) => {
   // Estado del formulario
@@ -196,9 +212,7 @@ const TaskForm = ({
           >
             {priorities.map(priority => (
               <option key={priority} value={priority}>
-                {priority === 'none' 
-                  ? 'Sin prioridad' 
-                  : priority.charAt(0).toUpperCase() + priority.slice(1)}
+                {PRIORITY_MAP[priority]}
               </option>
             ))}
           </select>

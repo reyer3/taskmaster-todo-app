@@ -3,6 +3,14 @@ import PropTypes from 'prop-types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+// Mapeo de prioridades para mostrar en español
+const PRIORITY_MAP = {
+  'high': 'Alta',
+  'medium': 'Media',
+  'low': 'Baja',
+  'none': 'Sin prioridad'
+};
+
 /**
  * Componente que muestra un elemento de tarea individual con acciones
  */
@@ -20,9 +28,9 @@ const TaskItem = ({
   
   // Determinar clases de prioridad
   const priorityClasses = {
-    alta: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
-    media: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
-    baja: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+    high: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+    medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+    low: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
     none: 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
   };
   
@@ -77,7 +85,7 @@ const TaskItem = ({
             <div className="mt-2 flex flex-wrap gap-2 items-center">
               {priority && priority !== 'none' && (
                 <span className={`text-xs px-2 py-0.5 rounded-full ${priorityClasses[priority] || priorityClasses.none}`}>
-                  {priority}
+                  {PRIORITY_MAP[priority] || priority}
                 </span>
               )}
               
