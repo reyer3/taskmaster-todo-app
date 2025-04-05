@@ -81,7 +81,7 @@ const Sidebar = () => {
       </button>
       
       <aside 
-        className={`bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary fixed left-0 top-0 bottom-0 pt-20 pb-4 transition-all duration-300 shadow-md z-40 border-r border-gray-200 dark:border-dark-border overflow-y-auto
+        className={`bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary fixed left-0 top-0 h-screen pt-20 transition-all duration-300 shadow-md z-40 border-r border-gray-200 dark:border-dark-border
           ${collapsed ? 'w-20' : 'w-64'} 
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
@@ -94,7 +94,7 @@ const Sidebar = () => {
             {collapsed ? '→' : '←'}
           </button>
           
-          <div className="px-4 py-2 flex-1 overflow-y-auto">
+          <div className="px-4 py-2 flex-1">
             <nav className="space-y-1">
               {navItems.map((item) => (
                 <Link
@@ -131,7 +131,7 @@ const Sidebar = () => {
             )}
           </div>
           
-          <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
+          <div className="p-4 border-t border-gray-200 text-xs text-gray-500 mt-auto">
             {!collapsed && "TaskMaster © 2023"}
           </div>
         </div>

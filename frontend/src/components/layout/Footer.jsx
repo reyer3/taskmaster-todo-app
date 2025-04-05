@@ -1,14 +1,21 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 /**
  * Componente de pie de página de la aplicación
  */
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  
+  // Determinar si está en una ruta autenticada donde se muestra el sidebar
+  const isAuthRoute = isAuthenticated && 
+    !(location.pathname === '/login' || location.pathname === '/register');
   
   return (
-    <footer className="bg-white dark:bg-dark-bg-secondary border-t border-gray-200 dark:border-dark-border w-full transition-colors duration-300">
+    <footer className={`bg-white dark:bg-dark-bg-secondary border-t border-gray-200 dark:border-dark-border w-full transition-colors duration-300 ${isAuthRoute ? 'lg:ml-64' : ''}`}>
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
