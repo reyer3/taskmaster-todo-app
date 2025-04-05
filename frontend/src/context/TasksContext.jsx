@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../hooks/useToast';
+import { useToast } from './ToastContext';
 import { getTasks, createTask, updateTask, deleteTask } from '../features/tasks/services/tasks.service';
 
 // Creación del contexto

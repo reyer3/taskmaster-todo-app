@@ -5,27 +5,34 @@
  * gestión de tokens, manejo de errores y reintento de peticiones.
  */
 import axios from 'axios';
-import { getToken } from './token.service';
-
-// URL base de la API desde las variables de entorno
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { API_URL, API_TIMEOUT, API_ERRORS } from '../config/api';
 
 /**
- * Cliente Axios configurado para la API
+ * Servicio para llamadas a la API con Axios
+ * Incluye interceptores para manejar tokens y errores
  */
-const apiClient = axios.create({
+
+// Crear instancia de axios con configuración base
+const api = axios.create({
   baseURL: API_URL,
+  timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
-  },
+    'Accept': 'application/json',
+  }
 });
 
+// Función para obtener token del almacenamiento
+const getAuthToken = () => {
+  return localStorage.getItem('auth_token');
+};
+
 /**
- * Interceptor para añadir el token a las peticiones
+ * Interceptor para añadir token a las peticiones
  */
-apiClient.interceptors.request.use(
+api.interceptors.request.use(
   (config) => {
-    const token = getToken();
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,38 +46,85 @@ apiClient.interceptors.request.use(
 /**
  * Interceptor para manejar respuestas y errores
  */
-apiClient.interceptors.response.use(
-  // Respuestas exitosas
+api.interceptors.response.use(
   (response) => {
     return response.data;
   },
-  // Errores
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Si el error es 401 (No autorizado) y no hemos intentado ya renovar el token
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Aquí podríamos intentar renovar el token si tuviéramos un endpoint para ello
-
-      // Por ahora, simplemente rechazamos la promesa
-      return Promise.reject(error);
-    }
-
-    // Formatear mensaje de error para el cliente
+  (error) => {
+    // Preparar mensaje de error amigable
+    let errorMessage = API_ERRORS.SERVER_ERROR;
+    
     if (error.response) {
-      // La petición fue hecha y el servidor respondió con un código de estado
-      // que cae fuera del rango 2xx
-      error.message = error.response.data.message || 'Error en la petición';
+      // El servidor respondió con un código de error
+      const { status } = error.response;
+      
+      switch (status) {
+        case 401:
+          errorMessage = API_ERRORS.UNAUTHORIZED;
+          // Se podría disparar un evento para redireccionar al login
+          // o refrescar el token si es necesario
+          break;
+        case 403:
+          errorMessage = API_ERRORS.FORBIDDEN;
+          break;
+        case 404:
+          errorMessage = API_ERRORS.NOT_FOUND;
+          break;
+        case 422:
+          errorMessage = API_ERRORS.VALIDATION;
+          if (error.response.data && error.response.data.errors) {
+            // Extraer mensajes específicos de validación si existen
+            errorMessage = Object.values(error.response.data.errors)
+              .flat()
+              .join('. ');
+          }
+          break;
+        default:
+          errorMessage = error.response.data?.message || API_ERRORS.SERVER_ERROR;
+      }
     } else if (error.request) {
-      // La petición fue hecha, pero no se recibió respuesta
-      error.message = 'No se pudo conectar con el servidor';
-    } else {
-      // Algo ocurrió al configurar la petición que desencadenó un error
-      error.message = 'Error al realizar la petición';
+      // La petición fue hecha pero no hubo respuesta
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = API_ERRORS.TIMEOUT;
+      } else {
+        errorMessage = API_ERRORS.NETWORK_ERROR;
+      }
     }
-
-    return Promise.reject(error);
+    
+    // Aquí se podría integrar con un sistema de notificaciones
+    console.error('API Error:', errorMessage);
+    
+    return Promise.reject({
+      message: errorMessage,
+      originalError: error
+    });
   }
 );
 
-export default apiClient;
+// Método para hacer peticiones GET
+export const get = (url, params = {}) => {
+  return api.get(url, { params });
+};
+
+// Método para hacer peticiones POST
+export const post = (url, data = {}) => {
+  return api.post(url, data);
+};
+
+// Método para hacer peticiones PUT
+export const put = (url, data = {}) => {
+  return api.put(url, data);
+};
+
+// Método para hacer peticiones PATCH
+export const patch = (url, data = {}) => {
+  return api.patch(url, data);
+};
+
+// Método para hacer peticiones DELETE
+export const del = (url) => {
+  return api.delete(url);
+};
+
+// Exportar la instancia completa para usos especiales
+export default api;

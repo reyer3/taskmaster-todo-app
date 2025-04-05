@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import { loginUser, registerUser, getCurrentUser } from '../features/auth/services/auth.service';
 import { setToken, removeToken, getToken } from '../services/token.service';
-import { useToast } from '../hooks/useToast';
+import { useToast } from './ToastContext';
 
 // Creación del contexto
 export const AuthContext = createContext();
@@ -23,22 +23,38 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('Verificando autenticación...');
         const token = getToken();
+        console.log('Token encontrado:', !!token);
+        
         if (!token) {
+          console.log('No hay token, terminando verificación');
           setIsLoading(false);
           return;
         }
 
+        console.log('Obteniendo datos del usuario actual...');
         const userData = await getCurrentUser();
+        console.log('Datos del usuario obtenidos:', userData);
+        
         if (userData) {
           setUser(userData);
           setIsAuthenticated(true);
+          console.log('Usuario autenticado correctamente');
+        } else {
+          console.log('No se encontraron datos del usuario');
+          removeToken();
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (err) {
         console.error('Error al verificar autenticación:', err);
         removeToken();
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
+        console.log('Verificación de autenticación completada');
       }
     };
 
@@ -54,7 +70,16 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setError(null);
     try {
-      const { user, token } = await loginUser(email, password);
+      console.log('Iniciando sesión...', { email });
+      const response = await loginUser(email, password);
+      console.log('Respuesta de inicio de sesión:', response);
+      
+      // Verificar que la respuesta contenga los datos necesarios
+      if (!response || !response.token) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+      
+      const { user, token } = response;
       setToken(token);
       setUser(user);
       setIsAuthenticated(true);
@@ -64,7 +89,8 @@ export const AuthProvider = ({ children }) => {
       });
       return user;
     } catch (err) {
-      const message = err.response?.data?.message || 'Error al iniciar sesión';
+      console.error('Error en login:', err);
+      const message = err.response?.data?.message || err.message || 'Error al iniciar sesión';
       setError(message);
       showToast({
         type: 'error',
@@ -126,5 +152,6 @@ export const AuthProvider = ({ children }) => {
     logout
   };
 
+  console.log('Estado actual de AuthContext:', { isAuthenticated, isLoading, user: !!user });
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

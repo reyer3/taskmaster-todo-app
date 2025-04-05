@@ -3,9 +3,16 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
+import './styles/variables.css'
 import { AuthProvider } from './context/AuthContext'
 import { TasksProvider } from './context/TasksContext'
 import { ToastProvider } from './context/ToastContext'
+
+// Ya no necesitamos esta inicialización porque la hace el hook useTheme
+// const initializeTheme = () => {
+//   ...
+// };
+// initializeTheme();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
