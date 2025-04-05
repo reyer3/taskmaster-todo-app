@@ -340,34 +340,30 @@ const TaskForm = ({
                 }
               }}
               onCalendarOpen={() => {
-                // Forzar posicionamiento inteligente del calendario
+                // Forzar posicionamiento inteligente del calendario en el centro de la pantalla
                 setTimeout(() => {
-                  const input = document.getElementById('dueDate');
                   const calendar = document.querySelector('.react-datepicker');
-                  if (input && calendar) {
-                    // Ajustar estilos para mejorar posicionamiento
+                  const popperElement = document.querySelector('.react-datepicker-popper');
+                  
+                  if (calendar && popperElement) {
+                    // Centrar el calendario en la pantalla
                     calendar.style.zIndex = "9999";
+                    popperElement.style.position = "fixed";
+                    popperElement.style.top = "50%";
+                    popperElement.style.left = "50%";
+                    popperElement.style.transform = "translate(-50%, -50%)";
                     
-                    const inputRect = input.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - inputRect.bottom;
-                    const spaceAbove = inputRect.top;
+                    // Añadir clase para efecto modal
+                    popperElement.classList.add('calendar-centered');
                     
-                    // Si hay poco espacio abajo, posicionar arriba
-                    if (spaceBelow < 300 && spaceAbove > 300) {
-                      // Scroll para ver bien el calendario si se abre hacia arriba
-                      window.scrollTo({
-                        top: window.scrollY - 100,
-                        behavior: 'smooth'
-                      });
-                    } else {
-                      // Scroll para ver bien el calendario si está abajo
-                      const calendarRect = calendar.getBoundingClientRect();
-                      if (calendarRect.bottom > window.innerHeight) {
-                        window.scrollTo({
-                          top: window.scrollY + 100,
-                          behavior: 'smooth'
-                        });
-                      }
+                    // Asegurarse que el contenido completo del calendario es visible
+                    const viewportHeight = window.innerHeight;
+                    const calendarHeight = calendar.offsetHeight;
+                    
+                    // Si el calendario es demasiado grande para la pantalla, reducir su tamaño
+                    if (calendarHeight > viewportHeight * 0.8) {
+                      calendar.style.maxHeight = `${viewportHeight * 0.8}px`;
+                      calendar.style.overflow = "hidden";
                     }
                   }
                 }, 10);
@@ -376,32 +372,38 @@ const TaskForm = ({
                 {
                   name: "flip",
                   options: {
-                    fallbackPlacements: ['top-start', 'bottom-start', 'top-end', 'bottom-end'],
+                    fallbackPlacements: ['center'],
                   },
                 },
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 10],
+                    offset: [0, 0], // Sin offset para centrado perfecto
                   },
                 },
                 {
                   name: "preventOverflow",
                   options: {
-                    rootBoundary: "viewport",
-                    padding: 8,
+                    boundary: "viewport",
+                    padding: 20,
                   },
                 },
                 {
                   name: "computeStyles",
                   options: {
-                    gpuAcceleration: false, // Mejor posicionamiento en algunos navegadores
+                    gpuAcceleration: false,
+                  },
+                },
+                {
+                  name: "arrow",
+                  options: {
+                    element: false, // Deshabilitar flecha para mejor centrado
                   },
                 },
               ]}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base calendar-compact calendar-float"
+              calendarClassName="shadow-xl border-0 text-base calendar-compact calendar-float calendar-modal"
               popperClassName="datepicker-popper-float"
               fixedHeight
               renderCustomHeader={({

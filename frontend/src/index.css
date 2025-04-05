@@ -237,57 +237,57 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
   border-radius: 10px !important;
   overflow: hidden;
-  font-size: 0.95rem !important;
+  font-size: 0.9rem !important;
+  max-height: 350px !important;
 }
 
 /* Versión compacta del calendario */
 .calendar-compact .react-datepicker__month-container {
   width: auto !important;
-  min-width: 280px !important;
+  min-width: 260px !important;
 }
 
 .calendar-compact .react-datepicker__day {
-  margin: 0.15rem !important;
-  padding: 0.15rem !important;
-  height: 1.8rem !important;
-  width: 1.8rem !important;
+  margin: 0.1rem !important;
+  padding: 0.1rem !important;
+  height: 1.7rem !important;
+  width: 1.7rem !important;
   line-height: 1.5rem !important;
 }
 
 .calendar-compact .react-datepicker__day-name {
-  margin: 0.15rem !important;
-  width: 1.8rem !important;
+  margin: 0.1rem !important;
+  width: 1.7rem !important;
 }
 
 .calendar-compact .react-datepicker__header {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 .calendar-compact .datepicker-custom-header {
-  padding: 8px 10px !important;
+  padding: 6px 8px !important;
 }
 
 /* Posicionamiento inteligente para evitar scroll */
 .react-datepicker-popper {
-  z-index: 1000 !important; 
+  z-index: 9999 !important;
+  position: fixed !important;
 }
 
 /* Posiciona arriba cuando está cerca del final */
 .react-datepicker-popper[data-placement^="top"] {
-  margin-bottom: 10px !important;
+  margin-bottom: 5px !important;
 }
 
 /* Posiciona abajo cuando hay espacio */
 .react-datepicker-popper[data-placement^="bottom"] {
-  margin-top: 10px !important;
+  margin-top: 5px !important;
 }
 
 .react-datepicker__header {
-  background-color: rgb(var(--primary)) !important;
-  border-bottom: none !important;
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 
 .react-datepicker__current-month, 
@@ -298,16 +298,11 @@
 }
 
 .react-datepicker__day {
-  margin: 0.2rem !important;
-  padding: 0.2rem !important;
-  border-radius: 50% !important;
-  height: 2rem !important;
-  width: 2rem !important;
-  line-height: 1.6rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.15s ease-in-out !important;
+  margin: 0.15rem !important;
+  padding: 0.15rem !important;
+  height: 1.8rem !important;
+  width: 1.8rem !important;
+  line-height: 1.5rem !important;
 }
 
 .react-datepicker__day--keyboard-selected,
@@ -484,22 +479,8 @@
 }
 
 .datepicker-dropdown {
-  background-color: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  border-radius: 4px;
-  padding: 6px 10px;
-  margin: 0 4px;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
-  background-position: right 4px center;
-  background-repeat: no-repeat;
-  background-size: 16px 16px;
-  padding-right: 24px;
-  cursor: pointer;
-  font-weight: 500;
-  text-transform: capitalize;
-  transition: background-color 0.15s ease-in-out;
+  padding: 4px 20px 4px 8px !important;
+  font-size: 0.85rem !important;
 }
 
 .datepicker-dropdown:hover {
@@ -541,11 +522,11 @@
 
 .datepicker-popper-float {
   z-index: 9999 !important;
-  position: absolute !important;
-  transform: translate3d(0, 0, 0) !important;
-  will-change: transform !important;
-  top: auto !important;
-  left: auto !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
 }
 
 /* Asegurar que el contenedor del input no oculta el calendario */
@@ -579,6 +560,7 @@
   position: absolute !important;
   left: 50px !important;
   z-index: 9999 !important;
+  transform: scale(0.9) !important;
 }
 
 .react-datepicker__triangle:before,
@@ -608,4 +590,99 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Estilos para el calendario centrado tipo modal */
+.calendar-modal {
+  border: 2px solid rgb(var(--primary)) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.calendar-centered {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* Ocultar triángulo conector cuando está en modo modal */
+.calendar-centered .react-datepicker__triangle {
+  display: none !important;
+}
+
+/* Añadir un fondo semitransparente para efecto modal */
+.calendar-centered::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+/* Hacer que los días sean más compactos */
+.calendar-modal .react-datepicker__day {
+  margin: 0.1rem !important;
+  padding: 0.05rem !important;
+  height: 1.6rem !important;
+  width: 1.6rem !important;
+  line-height: 1.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+.calendar-modal .react-datepicker__day-name {
+  margin: 0.1rem !important;
+  width: 1.6rem !important;
+  font-size: 0.85rem !important;
+}
+
+/* Reducir espaciado en encabezado */
+.calendar-modal .react-datepicker__header {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
+/* Hacer los botones de navegación más compactos */
+.calendar-modal .datepicker-custom-header {
+  padding: 5px !important;
+}
+
+/* Estilo especial para el botón de "Hoy" */
+.calendar-modal .react-datepicker__today-button {
+  padding: 8px !important;
+  font-size: 0.9rem !important;
+}
+
+/* Animación suave al aparecer el calendario modal */
+.calendar-centered {
+  animation: modalCalendarAppear 0.2s ease-out;
+}
+
+@keyframes modalCalendarAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Asegurar que los selectores de mes y año sean más compactos */
+.calendar-modal .datepicker-dropdown {
+  padding: 3px 18px 3px 6px !important;
+  font-size: 0.8rem !important;
+}
+
+/* Modo oscuro para el calendario modal */
+.dark .calendar-modal {
+  background-color: #1f2937 !important;
+  border-color: rgb(var(--primary)) !important;
 }
