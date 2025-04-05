@@ -280,7 +280,7 @@ const TaskForm = ({
           >
             Fecha de vencimiento
           </label>
-          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary`}>
+          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary relative`}>
             <DatePicker
               id="dueDate"
               selected={formData.dueDate}
@@ -295,12 +295,14 @@ const TaskForm = ({
               scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
-              popperPlacement="auto"
+              popperPlacement="bottom-start"
+              closeOnScroll={false}
+              shouldCloseOnSelect={false}
               popperModifiers={[
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 10],
+                    offset: [0, 12],
                   },
                 },
                 {
@@ -309,13 +311,29 @@ const TaskForm = ({
                     rootBoundary: "viewport",
                     tether: false,
                     altAxis: true,
-                    padding: 8,
+                    padding: 10,
                   },
                 },
               ]}
+              onCalendarOpen={() => {
+                // Ajustar scroll cuando se abre el calendario
+                setTimeout(() => {
+                  const calendarContainer = document.querySelector('.react-datepicker');
+                  if (calendarContainer) {
+                    const rect = calendarContainer.getBoundingClientRect();
+                    if (rect.bottom > window.innerHeight) {
+                      window.scrollTo({
+                        top: window.scrollY + (rect.bottom - window.innerHeight) + 20,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }
+                }, 0);
+              }}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-lg border-0"
+              calendarClassName="shadow-xl border-0 text-base"
+              fixedHeight
               renderCustomHeader={({
                 date,
                 changeYear,
@@ -339,6 +357,7 @@ const TaskForm = ({
                     <select
                       value={date.getMonth()}
                       onChange={({ target: { value } }) => changeMonth(Number(value))}
+                      className="datepicker-dropdown"
                     >
                       {Array.from({ length: 12 }, (_, i) => (
                         <option key={i} value={i}>
@@ -349,6 +368,7 @@ const TaskForm = ({
                     <select
                       value={date.getFullYear()}
                       onChange={({ target: { value } }) => changeYear(Number(value))}
+                      className="datepicker-dropdown"
                     >
                       {Array.from({ length: 10 }, (_, i) => {
                         const year = new Date().getFullYear() + i;
@@ -371,7 +391,26 @@ const TaskForm = ({
                   </button>
                 </div>
               )}
+              dayClassName={date => 
+                date.getDate() === new Date().getDate() && 
+                date.getMonth() === new Date().getMonth() && 
+                date.getFullYear() === new Date().getFullYear() 
+                  ? "datepicker-today" 
+                  : undefined
+              }
             />
+            {formData.dueDate && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                onClick={() => handleDateChange(null)}
+                aria-label="Borrar fecha"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
           </div>
           {errors.dueDate && <p className="mt-1 text-sm text-red-500">{errors.dueDate}</p>}
         </div>

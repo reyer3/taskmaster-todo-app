@@ -229,38 +229,84 @@
 /* Estilos para React DatePicker */
 .react-datepicker-wrapper {
   width: 100%;
+  display: block;
 }
 
 .react-datepicker {
   font-family: inherit !important;
   border-color: #e5e7eb !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 10px !important;
   overflow: hidden;
+  font-size: 0.95rem !important;
+  transform-origin: top center;
+  animation: datepickerFadeIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) !important;
 }
 
 .react-datepicker__header {
   background-color: rgb(var(--primary)) !important;
   border-bottom: none !important;
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
 }
 
 .react-datepicker__current-month, 
 .react-datepicker-time__header,
 .react-datepicker__day-name {
   color: white !important;
+  font-weight: 500 !important;
+}
+
+.react-datepicker__day {
+  margin: 0.2rem !important;
+  padding: 0.2rem !important;
+  border-radius: 50% !important;
+  height: 2rem !important;
+  width: 2rem !important;
+  line-height: 1.6rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__month-text--keyboard-selected,
+.react-datepicker__quarter-text--keyboard-selected,
+.react-datepicker__year-text--keyboard-selected {
+  background-color: rgba(var(--primary), 0.2) !important;
+  color: rgb(var(--primary)) !important;
 }
 
 .react-datepicker__day--selected, 
-.react-datepicker__day--keyboard-selected {
+.react-datepicker__day--keyboard-selected:hover,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
   background-color: rgb(var(--primary)) !important;
   border-radius: 50% !important;
   color: white !important;
   font-weight: bold;
 }
 
+.datepicker-today {
+  position: relative;
+  font-weight: bold !important;
+}
+
+.datepicker-today::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
 .react-datepicker__day:hover {
+  background-color: rgba(var(--primary), 0.1) !important;
   border-radius: 50% !important;
 }
 
@@ -269,7 +315,13 @@
   color: white !important;
   border-top: none !important;
   font-weight: bold;
-  padding: 10px !important;
+  padding: 12px !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.react-datepicker__today-button:hover {
+  background-color: rgb(var(--primary-focus)) !important;
 }
 
 /* Estilos para modo oscuro */
@@ -286,11 +338,15 @@
   color: #f3f4f6 !important;
 }
 
+.dark .react-datepicker__day--keyboard-selected {
+  background-color: rgba(var(--primary), 0.3) !important;
+}
+
 .dark .react-datepicker__day--disabled, 
 .dark .react-datepicker__month-text--disabled, 
 .dark .react-datepicker__quarter-text--disabled, 
 .dark .react-datepicker__year-text--disabled {
-  color: #9ca3af !important;
+  color: #6b7280 !important;
   opacity: 0.5;
 }
 
@@ -307,11 +363,13 @@
 .react-datepicker__year-dropdown,
 .react-datepicker__month-dropdown {
   background-color: white;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #e5e7eb;
-  max-height: 220px;
+  max-height: 250px;
   overflow-y: auto;
   z-index: 30;
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dark .react-datepicker__year-dropdown,
@@ -322,7 +380,9 @@
 
 .react-datepicker__year-option,
 .react-datepicker__month-option {
-  padding: 6px 10px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
 }
 
 .react-datepicker__year-option:hover,
@@ -352,17 +412,21 @@
 
 /* Posicionamiento del calendario */
 .react-datepicker-popper {
-  animation: datepickerFadeIn 0.2s ease-out;
   z-index: 99 !important;
-  margin-top: 8px !important;
+  margin-top: 12px !important;
   position: absolute !important;
+}
+
+/* Ajuste del triángulo */
+.react-datepicker__triangle {
+  left: 50px !important;
 }
 
 /* Personalización del encabezado */
 .datepicker-custom-header {
   background-color: rgb(var(--primary));
   color: white;
-  padding: 8px 12px;
+  padding: 12px 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -372,24 +436,31 @@
   color: white;
   background: transparent;
   border: none;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
 }
 
 .datepicker-custom-header button:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.datepicker-custom-header select {
+.datepicker-custom-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.datepicker-dropdown {
   background-color: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   margin: 0 4px;
   appearance: none;
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
@@ -397,15 +468,39 @@
   background-repeat: no-repeat;
   background-size: 16px 16px;
   padding-right: 24px;
+  cursor: pointer;
+  font-weight: 500;
+  text-transform: capitalize;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.datepicker-dropdown:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.datepicker-dropdown:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.datepicker-dropdown option {
+  background-color: white;
+  color: #333;
+  padding: 8px;
+}
+
+.dark .datepicker-dropdown option {
+  background-color: #1f2937;
+  color: #f3f4f6;
 }
 
 @keyframes datepickerFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
