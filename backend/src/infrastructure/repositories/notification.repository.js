@@ -121,18 +121,13 @@ class NotificationRepository {
    * @param {Object} options - Opciones de eliminación
    * @returns {Promise<number>} Número de notificaciones eliminadas
    */
-  async deleteExpired(options = {}) {
-    const { 
-      olderThan = 30, // días
-      onlyRead = true 
-    } = options;
-
+  async deleteExpired(olderThan = 7, onlyRead = true) {
     const now = new Date();
     const cutoffDate = new Date(now.setDate(now.getDate() - olderThan));
 
     const whereClause = {
       OR: [
-        { expiresAt: { lt: new Date() } },
+        { expiresAt: { lt: cutoffDate } },
         { 
           createdAt: { lt: cutoffDate },
           ...(onlyRead ? { isRead: true } : {})

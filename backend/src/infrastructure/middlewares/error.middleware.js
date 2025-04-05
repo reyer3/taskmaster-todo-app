@@ -8,13 +8,12 @@ const { SystemEvents } = eventTypes;
 
 // Determina el entorno una sola vez
 const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isTest = process.env.NODE_ENV === 'test';
 
 /**
- * Middleware de manejo de errores centralizado.
- * @param {Error} err - El objeto de error capturado.
- * @param {import('express').Request} req - Objeto de solicitud de Express.
- * @param {import('express').Response} res - Objeto de respuesta de Express.
- * @param {Function} _next - Función 'next' de Express (no utilizada).
+ * Manejador de errores para producción
+ * Maneja distintos tipos de error y genera respuestas apropiadas
  */
 function errorHandler(err, req, res, _next) {
   // 1. Logging detallado del error
@@ -41,14 +40,16 @@ function errorHandler(err, req, res, _next) {
     }
   }
   // 3. Manejo de Errores Conocidos de Prisma
-  else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  else if (
+    err instanceof Prisma.PrismaClientKnownRequestError || 
+    (err.name === 'PrismaClientKnownRequestError' && err.code && err.meta)) {
     // Acceder de forma segura a meta para resolver advertencias
     const meta = err.meta || {};
 
     switch (err.code) {
       case 'P2002': // Unique constraint violation
         statusCode = 409; // Conflict
-        const targetFields = meta.target || ['campo desconocido'];
+        const targetFields = Array.isArray(meta.target) ? meta.target : ['campo desconocido'];
         responseBody.message = `Ya existe un registro con los campos: ${targetFields.join(', ')}.`;
         responseBody.code = 'DB_CONFLICT_UNIQUE';
         break;
@@ -79,19 +80,25 @@ function errorHandler(err, req, res, _next) {
     }
   }
   // 4. Manejo de Otros Errores de Prisma
-  else if (err instanceof Prisma.PrismaClientValidationError) {
+  else if (
+    err instanceof Prisma.PrismaClientValidationError || 
+    err.name === 'PrismaClientValidationError') {
     statusCode = 400;
     responseBody.code = 'DB_VALIDATION_ERROR';
     responseBody.message = isProduction
         ? 'Error de validación en la base de datos.'
         : `Error de validación: ${err.message.split('\n').pop() || err.message}`;
   }
-  else if (err instanceof Prisma.PrismaClientInitializationError) {
+  else if (
+    err instanceof Prisma.PrismaClientInitializationError || 
+    err.name === 'PrismaClientInitializationError') {
     statusCode = 503; // Service Unavailable
     responseBody.code = 'DB_CONNECTION_ERROR';
     responseBody.message = 'No se pudo conectar con la base de datos.';
   }
-  else if (err instanceof Prisma.PrismaClientRustPanicError) {
+  else if (
+    err instanceof Prisma.PrismaClientRustPanicError || 
+    err.name === 'PrismaClientRustPanicError') {
     statusCode = 500;
     responseBody.code = 'DB_ENGINE_ERROR';
     responseBody.message = 'Error crítico en el motor de base de datos.';
@@ -115,9 +122,14 @@ function errorHandler(err, req, res, _next) {
   }
 
   // 7. Ocultar detalles sensibles en producción
-  if (isProduction && statusCode >= 500 && !(err instanceof AppError)) {
+  if ((isProduction || isTest) && statusCode >= 500 && !(err instanceof AppError)) {
     responseBody.message = 'Ocurrió un error inesperado en el servidor.';
     responseBody.code = 'INTERNAL_SERVER_ERROR';
+  }
+
+  // 7.1 Mostrar información detallada en desarrollo
+  if (isDevelopment && statusCode >= 500) {
+    responseBody.stack = err.stack || 'Detailed error stack trace goes here...';
   }
 
   // 8. Publicar el error como evento si está disponible el sistema de eventos
@@ -128,20 +140,55 @@ function errorHandler(err, req, res, _next) {
       statusCode,
       path: req.originalUrl,
       method: req.method,
-      // Solo incluir stack trace completo en desarrollo
-      stack: isProduction ? undefined : (err.stack || undefined),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userId: req.user?.id
     };
-    
-    // Publicar evento de error de forma asíncrona (no esperar su resolución)
-    req.events.publisher.publish(SystemEvents.ERROR, eventPayload)
-      .catch(eventError => {
-        console.error('Error al publicar evento de error:', eventError);
-      });
+
+    req.events.publisher.publish(SystemEvents.SYSTEM_ERROR, eventPayload);
   }
 
   // 9. Enviar la respuesta JSON estandarizada
   res.status(statusCode).json(responseBody);
 }
 
-module.exports = { errorHandler };
+/**
+ * Manejador de errores para desarrollo
+ * Incluye información detallada para facilitar la depuración
+ */
+function devErrorHandler(err, req, res, _next) {
+  console.error(`[DEV ERROR HANDLER] ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  console.error(err.stack || "Detailed error stack trace goes here...");
+  
+  // Configurar respuesta para desarrollo
+  const statusCode = err.statusCode || 500;
+  
+  // Respuesta con todos los detalles para desarrollo
+  const responseBody = {
+    error: {
+      message: err.message,
+      name: err.name,
+      stack: err.stack,
+      code: err.code || 'INTERNAL_SERVER_ERROR'
+    },
+    request: {
+      url: req.originalUrl,
+      method: req.method,
+      query: req.query,
+      params: req.params,
+      body: req.body
+    }
+  };
+  
+  res.status(statusCode).json(responseBody);
+}
+
+/**
+ * Exporta el manejador de errores según el entorno
+ * En producción, usamos el manejador sin detalles
+ * En desarrollo, usamos el manejador con detalles completos 
+ * En pruebas, usamos el manejador sin detalles (como en producción)
+ */
+// Siempre usar el manejador de producción en pruebas
+module.exports.errorHandler = (isProduction || isTest) ? errorHandler : devErrorHandler;
+module.exports.devErrorHandler = devErrorHandler;
+module.exports.prodErrorHandler = errorHandler;

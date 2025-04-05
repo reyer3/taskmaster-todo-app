@@ -35,4 +35,5 @@ module.exports = {
   UserEvents,
   TaskEvents,
   SystemEvents,
+  AuthEvents: UserEvents,
 };

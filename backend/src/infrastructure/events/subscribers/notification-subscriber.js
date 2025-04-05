@@ -4,8 +4,8 @@
  * Este módulo escucha eventos relevantes del sistema y genera
  * notificaciones persistentes y en tiempo real.
  */
-const { eventPublisher, eventTypes } = require('../index');
-const { UserEvents, TaskEvents, SystemEvents } = eventTypes;
+const { eventPublisher } = require('../event-publisher');
+const { UserEvents, TaskEvents, SystemEvents } = require('../event-types');
 const { NotificationService } = require('../../../services/notification.service');
 const { NotificationRepository } = require('../../repositories/notification.repository');
 const { NotificationPreferenceRepository } = require('../../repositories/notification-preference.repository');
