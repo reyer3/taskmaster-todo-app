@@ -1,6 +1,7 @@
 /**
  * Configuración de Jest para pruebas unitarias
  */
+require("dotenv").config({ path: ".env" });
 
 module.exports = {
   // Directorio raíz para búsqueda de tests
