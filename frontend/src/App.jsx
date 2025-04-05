@@ -11,6 +11,7 @@ import Toast from './components/common/Toast';
 import Debug from './components/Debug'; // Importar componente de depuración
 import DarkModeDemo from './components/DarkModeDemo'; // Importar componente de demo para temas
 import { useTheme } from './hooks/useTheme';
+import useFavicon from './hooks/useFavicon'; // Importar hook para manejar el favicon
 
 /**
  * Componente principal de la aplicación
@@ -19,8 +20,9 @@ import { useTheme } from './hooks/useTheme';
 function App() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { toasts, removeToast } = useToast();
-  useTheme(); // Usar el hook para configurar el tema
-
+  const { resolvedTheme } = useTheme(); // Obtener tema actual
+  useFavicon(resolvedTheme); // Aplicar favicon según el tema
+  
   /**
    * Componente de ruta protegida que redirecciona si no hay autenticación
    */
