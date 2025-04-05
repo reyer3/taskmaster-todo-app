@@ -280,7 +280,7 @@ const TaskForm = ({
           >
             Fecha de vencimiento
           </label>
-          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary relative`}>
+          <div className={`${errors.dueDate ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'} border rounded-md overflow-visible focus-within:ring-2 focus-within:ring-primary relative`}>
             <DatePicker
               id="dueDate"
               selected={formData.dueDate}
@@ -295,48 +295,26 @@ const TaskForm = ({
               scrollableYearDropdown
               dropdownMode="select"
               todayButton="Hoy"
-              popperPlacement="auto"
-              closeOnScroll={true}
+              popperPlacement="bottom-start"
               shouldCloseOnSelect={true}
-              popperContainer={({ children }) => (
-                <div className="datepicker-popper-container">{children}</div>
-              )}
               popperModifiers={[
                 {
                   name: "offset",
                   options: {
-                    offset: [0, 15],
+                    offset: [0, 5],
                   },
                 },
                 {
                   name: "preventOverflow",
                   options: {
                     rootBoundary: "viewport",
-                    tether: false,
-                    altAxis: true,
-                    padding: 10,
+                    padding: 8,
                   },
                 },
               ]}
-              onCalendarOpen={() => {
-                // Ajustar scroll cuando se abre el calendario
-                setTimeout(() => {
-                  const calendarContainer = document.querySelector('.react-datepicker');
-                  if (calendarContainer) {
-                    const rect = calendarContainer.getBoundingClientRect();
-                    if (rect.bottom > window.innerHeight) {
-                      window.scrollTo({
-                        top: window.scrollY + (rect.bottom - window.innerHeight) + 20,
-                        behavior: 'smooth'
-                      });
-                    }
-                  }
-                }, 0);
-              }}
               disabled={loading}
               className="w-full px-3 py-1.5 focus:outline-none text-gray-900 dark:text-dark-text-primary bg-white dark:bg-dark-bg-tertiary"
-              calendarClassName="shadow-xl border-0 text-base datepicker-calendar"
-              popperClassName="datepicker-popper"
+              calendarClassName="shadow-xl border-0 text-base"
               fixedHeight
               renderCustomHeader={({
                 date,
