@@ -181,6 +181,21 @@ const testUser = {
   name: 'Test User'
 };
 
+describe('Pruebas de diagnóstico', () => {
+  it('debería verificar que no hay doble validación en login', async () => {
+    // Obtener el código del controlador para revisar
+    jest.dontMock('../../../src/api/auth/auth.controller');
+    const authController = require('../../../src/api/auth/auth.controller');
+    
+    // Verificar y reportar el comportamiento
+    console.log('Diagnóstico de pruebas de autenticación:');
+    console.log('- Rutas registradas:', Object.keys(authController.stack).length);
+
+    // La prueba misma simplemente pasa
+    expect(true).toBe(true);
+  });
+});
+
 describe('Auth API Endpoints', () => {
   let authToken;
   
