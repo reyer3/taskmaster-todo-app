@@ -4,7 +4,7 @@
  * Este módulo proporciona funciones para interactuar con los endpoints
  * de autenticación de la API.
  */
-import apiClient from '../../../services/api';
+import api from '../../../services/api';
 
 /**
  * Inicia sesión con credenciales
@@ -14,7 +14,7 @@ import apiClient from '../../../services/api';
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const loginUser = async (email, password) => {
-  return await apiClient.post('/auth/login', { email, password });
+  return await api.post('/auth/login', { email, password });
 };
 
 /**
@@ -27,7 +27,7 @@ export const loginUser = async (email, password) => {
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const registerUser = async (userData) => {
-  return await apiClient.post('/auth/register', userData);
+  return await api.post('/auth/register', userData);
 };
 
 /**
@@ -38,7 +38,7 @@ export const registerUser = async (userData) => {
 export const getCurrentUser = async () => {
   try {
     console.log('Llamando al endpoint /auth/me...');
-    const response = await apiClient.get('/auth/me');
+    const response = await api.get('/auth/me');
     console.log('Respuesta de /auth/me:', response);
     return response;
   } catch (error) {
@@ -55,7 +55,7 @@ export const getCurrentUser = async () => {
  * @returns {Promise<Object>} Datos actualizados del usuario
  */
 export const updateUser = async (userData) => {
-  return await apiClient.put('/auth/me', userData);
+  return await api.put('/auth/me', userData);
 };
 
 /**
@@ -67,5 +67,5 @@ export const updateUser = async (userData) => {
  * @returns {Promise<Object>} Resultado de la operación
  */
 export const changePassword = async (passwordData) => {
-  return await apiClient.put('/auth/password', passwordData);
+  return await api.put('/auth/password', passwordData);
 };
