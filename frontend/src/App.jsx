@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout';
 import LoginPage from './features/auth/components/LoginPage';
 import RegisterPage from './features/auth/components/RegisterPage';
 import TasksPage from './features/tasks/components/TasksPage';
+import DashboardPage from './features/dashboard/components/DashboardPage';
 import NotFoundPage from './components/NotFoundPage';
 import { useToast } from './context/ToastContext';
 import Toast from './components/common/Toast';
@@ -54,16 +55,21 @@ function App() {
         <Route path="/" element={<Layout />}>
           {/* Rutas públicas */}
           <Route path="login" element={
-            isAuthenticated ? <Navigate to="/tasks" replace /> : <LoginPage />
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
           } />
           <Route path="register" element={
-            isAuthenticated ? <Navigate to="/tasks" replace /> : <RegisterPage />
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />
           } />
           
           {/* Rutas protegidas */}
           <Route path="/" element={
             <ProtectedRoute>
-              <Navigate to="/tasks" replace />
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          } />
+          <Route path="dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
             </ProtectedRoute>
           } />
           <Route path="tasks" element={
