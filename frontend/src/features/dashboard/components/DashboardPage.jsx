@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../context/ToastContext';
 import RecentTasksWidget from './RecentTasksWidget';
@@ -20,6 +20,7 @@ const DashboardPage = () => {
     dueSoonTasks: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [recentTasks, setRecentTasks] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchMeta, setSearchMeta] = useState({
@@ -27,10 +28,10 @@ const DashboardPage = () => {
     resultCount: 0,
     timestamp: 0
   });
-  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
+  // Cargar datos iniciales del dashboard
   useEffect(() => {
-    // Carga de datos del dashboard utilizando el servicio
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
@@ -39,12 +40,21 @@ const DashboardPage = () => {
         const dashboardStats = await getDashboardStats();
         setStats(dashboardStats);
         
-        // Cargar tareas recientes pero sin aplicar filtros automáticos
+        // Cargar tareas recientes como muestra inicial
         const initialResults = await searchTasks({ dateRange: 'month' });
-        setFilteredResults(initialResults.slice(0, 3)); // Mostrar solo las 3 primeras
+        setRecentTasks(initialResults.slice(0, 5));
+        
+        // Inicialmente mostrar solo las tareas recientes sin aplicar filtros
+        setFilteredResults([]); 
         
         setIsLoading(false);
-        setInitialDataLoaded(true);
+        
+        // Marcar que el componente está listo para permitir búsquedas
+        // Agregamos un pequeño retraso para asegurar que no se activen búsquedas automáticas
+        setTimeout(() => {
+          setIsReady(true);
+        }, 500);
+        
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
         showError('No se pudieron cargar los datos del dashboard');
@@ -55,42 +65,53 @@ const DashboardPage = () => {
     loadDashboardData();
   }, [showError]);
 
-  const handleFilterChange = async (filters) => {
-    // Ignorar cambios de filtro durante la carga inicial
-    if (!initialDataLoaded) {
+  // Handler para filtros con protección contra llamadas prematuras
+  const handleFilterChange = useCallback(async (filters) => {
+    // Protección crítica: no procesar búsquedas hasta que el componente esté listo
+    if (!isReady) {
+      console.log('Dashboard no está listo, ignorando búsqueda');
       return;
     }
     
     try {
-      // No iniciar búsqueda con texto vacío en la carga inicial
       const searchTerm = filters.searchQuery || '';
-      if (!searchTerm && searchMeta.lastQuery === '' && !filters.status && !filters.priority && filters.dateRange === 'all') {
-        return; // Evitar búsqueda innecesaria al cargar la página
+      const hasActiveFilters = 
+        searchTerm || 
+        filters.status || 
+        filters.priority || 
+        (filters.dateRange && filters.dateRange !== 'all');
+      
+      // Si no hay filtros activos, mostrar un conjunto vacío de resultados
+      // esto evita búsquedas innecesarias al cargar
+      if (!hasActiveFilters) {
+        setFilteredResults([]);
+        return;
       }
       
       const startTime = Date.now();
       
-      // Mostrar indicador visual durante la búsqueda
-      if (searchTerm && searchTerm !== searchMeta.lastQuery) {
+      // Activar indicador de búsqueda solo para búsquedas de texto
+      if (searchTerm) {
         setIsSearching(true);
       }
       
       console.log('Aplicando filtros:', filters);
       
-      // Usar el servicio de búsqueda para obtener resultados filtrados
+      // Realizar la búsqueda real
       const results = await searchTasks(filters);
       
-      // Actualizar resultados y metadatos
+      // Actualizar UI con resultados
       setFilteredResults(results);
       setIsSearching(false);
       
+      // Actualizar metadatos de búsqueda
       setSearchMeta({
         lastQuery: searchTerm,
         resultCount: results.length,
         timestamp: Date.now()
       });
       
-      // Solo mostrar notificación si fue una búsqueda explícita (no cambio automático por debounce)
+      // Notificar solo para búsquedas explícitas con texto
       if (searchTerm && startTime - searchMeta.timestamp > 1000) {
         success(`Se encontraron ${results.length} resultados`);
       }
@@ -99,7 +120,7 @@ const DashboardPage = () => {
       showError('No se pudieron aplicar los filtros');
       setIsSearching(false);
     }
-  };
+  }, [isReady, searchMeta.timestamp, success, showError]);
 
   if (isLoading) {
     return (
@@ -150,7 +171,11 @@ const DashboardPage = () => {
 
       {/* Componente de búsqueda y filtros */}
       <div className="mb-8">
-        <TaskFilter onFilterChange={handleFilterChange} />
+        {/* Solo pasar onFilterChange cuando el componente esté listo */}
+        <TaskFilter 
+          onFilterChange={isReady ? handleFilterChange : null} 
+          disabled={!isReady}
+        />
       </div>
 
       {/* Contenedor para widgets */}
@@ -163,7 +188,7 @@ const DashboardPage = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-            Resultados
+            {filteredResults.length > 0 ? 'Resultados de búsqueda' : 'Tareas recientes'}
           </h2>
           {isSearching && (
             <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -185,6 +210,39 @@ const DashboardPage = () => {
               </thead>
               <tbody>
                 {filteredResults.map(task => (
+                  <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700">
+                    <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        task.status === 'completed' || task.completed
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                      }`}>
+                        {task.status === 'completed' || task.completed ? 'Completada' : 'Pendiente'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-gray-600 dark:text-gray-300">
+                      {task.dueDate 
+                        ? new Date(task.dueDate).toLocaleDateString('es-ES')
+                        : 'Sin fecha'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : isReady && recentTasks.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  <th className="pb-2">Tarea</th>
+                  <th className="pb-2">Estado</th>
+                  <th className="pb-2">Fecha de vencimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentTasks.map(task => (
                   <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700">
                     <td className="py-3 text-gray-800 dark:text-white">{task.title}</td>
                     <td className="py-3">

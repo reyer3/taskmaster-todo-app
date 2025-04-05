@@ -5,7 +5,7 @@ import useDebounce from '../../../hooks/useDebounce';
  * Componente para la búsqueda y filtrado de tareas
  * Implementa debounce para evitar llamadas excesivas al servidor
  */
-const TaskFilter = ({ onFilterChange }) => {
+const TaskFilter = ({ onFilterChange, disabled = false }) => {
   const [filters, setFilters] = useState({
     searchQuery: '',
     status: '',
@@ -27,6 +27,11 @@ const TaskFilter = ({ onFilterChange }) => {
   
   // Detectar cambios en la búsqueda con debounce y aplicar los filtros
   useEffect(() => {
+    // No hacer nada si el componente está deshabilitado o no hay función de cambio
+    if (disabled || !onFilterChange) {
+      return;
+    }
+    
     // Evitar la búsqueda en la primera renderización
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -34,28 +39,35 @@ const TaskFilter = ({ onFilterChange }) => {
     }
     
     // Solo realizar búsqueda si ha habido interacción del usuario
-    // o si el valor debounced ha cambiado explícitamente
-    if (!hasUserInteracted.current && debouncedSearchQuery === '') {
+    if (!hasUserInteracted.current) {
       return;
     }
     
     // Solo aplicar filtros si hay un término de búsqueda válido o está completamente vacío
     if ((debouncedSearchQuery && debouncedSearchQuery.length >= 2) || debouncedSearchQuery === '') {
-      if (onFilterChange) {
-        onFilterChange({
-          ...filters,
-          searchQuery: debouncedSearchQuery
-        });
-      }
+      onFilterChange({
+        ...filters,
+        searchQuery: debouncedSearchQuery
+      });
     }
-  }, [debouncedSearchQuery]); // Eliminamos filters de las dependencias para evitar ciclos
+  }, [debouncedSearchQuery, disabled, onFilterChange]); 
   
   // Aplicar otros filtros (no el de búsqueda) cuando cambian
   useEffect(() => {
-    if (isFirstRender.current) return;
+    // No hacer nada si el componente está deshabilitado o no hay función de cambio
+    if (disabled || !onFilterChange) {
+      return;
+    }
     
-    // Marcar que hubo interacción del usuario al cambiar filtros
-    hasUserInteracted.current = true;
+    // Evitar la búsqueda en la primera renderización
+    if (isFirstRender.current) {
+      return;
+    }
+    
+    // Solo realizar cambios si ha habido interacción del usuario
+    if (!hasUserInteracted.current) {
+      return;
+    }
     
     // Evitar aplicar la búsqueda aquí, ya que se maneja en el otro useEffect
     const { searchQuery, ...otherFilters } = filters;
@@ -63,7 +75,7 @@ const TaskFilter = ({ onFilterChange }) => {
       ...otherFilters,
       searchQuery: debouncedSearchQuery // Usar el valor con debounce
     });
-  }, [filters.status, filters.priority, filters.dateRange]);
+  }, [filters.status, filters.priority, filters.dateRange, disabled, onFilterChange, debouncedSearchQuery]);
   
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -85,16 +97,26 @@ const TaskFilter = ({ onFilterChange }) => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     
+    // No hacer nada si el componente está deshabilitado o no hay función de cambio
+    if (disabled || !onFilterChange) {
+      return;
+    }
+    
     // Marcar que hubo interacción del usuario
     hasUserInteracted.current = true;
     
     // Al enviar el formulario, aplicar los filtros inmediatamente si hay texto
-    if (filters.searchQuery.trim().length > 0 && onFilterChange) {
+    if (filters.searchQuery.trim().length > 0) {
       onFilterChange(filters);
     }
   };
   
   const clearFilters = () => {
+    // No hacer nada si el componente está deshabilitado o no hay función de cambio
+    if (disabled || !onFilterChange) {
+      return;
+    }
+    
     // Marcar que hubo interacción del usuario
     hasUserInteracted.current = true;
     
@@ -106,13 +128,11 @@ const TaskFilter = ({ onFilterChange }) => {
     };
     setFilters(resetFilters);
     
-    if (onFilterChange) {
-      onFilterChange(resetFilters);
-    }
+    onFilterChange(resetFilters);
   };
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${disabled ? 'opacity-75' : ''}`}>
       <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
         Buscar y Filtrar
       </h2>
@@ -128,11 +148,12 @@ const TaskFilter = ({ onFilterChange }) => {
             value={filters.searchQuery}
             onChange={handleFilterChange}
             autoComplete="off"
+            disabled={disabled}
           />
           <button
             type="submit"
-            className="bg-primary text-white px-4 py-2 rounded-r-lg hover:bg-primary-dark transition-colors"
-            disabled={filters.searchQuery.trim().length < 2}
+            className="bg-primary text-white px-4 py-2 rounded-r-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled || filters.searchQuery.trim().length < 2}
           >
             Buscar
           </button>
@@ -141,8 +162,14 @@ const TaskFilter = ({ onFilterChange }) => {
           <p className="text-xs text-yellow-500 dark:text-yellow-400 mt-1">
             Escribe al menos 2 caracteres para buscar
           </p>
-        ) : filters.searchQuery && debouncedSearchQuery !== filters.searchQuery && (
+        ) : filters.searchQuery && debouncedSearchQuery !== filters.searchQuery && !disabled && (
           <p className="text-xs text-gray-500 mt-1 animate-pulse">Buscando...</p>
+        )}
+        
+        {disabled && (
+          <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+            Cargando datos iniciales...
+          </p>
         )}
       </form>
       
@@ -151,20 +178,22 @@ const TaskFilter = ({ onFilterChange }) => {
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className="text-primary hover:underline text-sm focus:outline-none"
+          className="text-primary hover:underline text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={disabled}
         >
           {showAdvancedFilters ? 'Ocultar filtros avanzados' : 'Mostrar filtros avanzados'}
         </button>
         
-        {filters.status || filters.priority || filters.dateRange !== 'all' || filters.searchQuery ? (
+        {(filters.status || filters.priority || filters.dateRange !== 'all' || filters.searchQuery) && (
           <button
             type="button"
             onClick={clearFilters}
-            className="text-red-500 hover:underline text-sm focus:outline-none"
+            className="text-red-500 hover:underline text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled}
           >
             Limpiar filtros
           </button>
-        ) : null}
+        )}
       </div>
       
       {/* Filtros avanzados */}
@@ -180,6 +209,7 @@ const TaskFilter = ({ onFilterChange }) => {
               value={filters.status}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              disabled={disabled}
             >
               <option value="">Todos</option>
               <option value="pending">Pendientes</option>
@@ -199,6 +229,7 @@ const TaskFilter = ({ onFilterChange }) => {
               value={filters.priority}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              disabled={disabled}
             >
               <option value="">Todas</option>
               <option value="high">Alta</option>
@@ -217,6 +248,7 @@ const TaskFilter = ({ onFilterChange }) => {
               value={filters.dateRange}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+              disabled={disabled}
             >
               <option value="all">Todas las fechas</option>
               <option value="today">Hoy</option>
