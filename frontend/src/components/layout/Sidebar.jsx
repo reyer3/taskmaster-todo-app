@@ -23,18 +23,24 @@ const getSavedSidebarState = () => {
 /**
  * Componente de barra lateral con navegación principal
  * Incluye enlaces a las secciones principales y accesos rápidos
+ * @param {Object} props Propiedades del componente
+ * @param {Function} props.onToggleCollapse Función a llamar cuando cambia el estado colapsado
  */
-const Sidebar = () => {
+const Sidebar = ({ onToggleCollapse }) => {
   const { isAuthenticated } = useAuth();
   const { isPublicRoute } = useLayout();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(getSavedSidebarState());
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Efecto para guardar el estado cuando cambia
+  // Efecto para guardar el estado cuando cambia y notificar al componente padre
   useEffect(() => {
     saveSidebarState(collapsed);
-  }, [collapsed]);
+    // Notificar al Layout del cambio de estado si se proporciona la función
+    if (onToggleCollapse) {
+      onToggleCollapse(collapsed);
+    }
+  }, [collapsed, onToggleCollapse]);
 
   // Cierra la navegación móvil cuando cambia la ruta
   useEffect(() => {
@@ -81,20 +87,20 @@ const Sidebar = () => {
       </button>
       
       <aside 
-        className={`bg-white text-gray-800 h-screen fixed left-0 top-0 pt-20 transition-all duration-300 shadow-md z-40 border-r border-gray-200
+        className={`bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary fixed left-0 top-0 h-screen pt-20 transition-all duration-300 shadow-md z-40 border-r border-gray-200 dark:border-dark-border
           ${collapsed ? 'w-20' : 'w-64'} 
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="h-full flex flex-col">
           <button 
             onClick={toggleCollapsed} 
-            className="absolute top-24 -right-3 bg-white w-6 h-6 rounded-full shadow-md flex items-center justify-center text-primary border border-gray-200 hidden lg:flex"
+            className="absolute top-24 -right-3 bg-white dark:bg-dark-bg-tertiary w-6 h-6 rounded-full shadow-md flex items-center justify-center text-primary border border-gray-200 dark:border-dark-border hidden lg:flex"
             aria-label={collapsed ? "Expandir" : "Colapsar"}
           >
             {collapsed ? '→' : '←'}
           </button>
           
-          <div className="px-4 py-2 flex-1 overflow-y-auto">
+          <div className="px-4 py-2 flex-1">
             <nav className="space-y-1">
               {navItems.map((item) => (
                 <Link
@@ -131,7 +137,7 @@ const Sidebar = () => {
             )}
           </div>
           
-          <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
+          <div className="p-4 border-t border-gray-200 text-xs text-gray-500 mt-auto">
             {!collapsed && "TaskMaster © 2023"}
           </div>
         </div>

@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
  */
 const LoginPage = () => {
   const { login } = useAuth();
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   
@@ -30,14 +30,14 @@ const LoginPage = () => {
     try {
       setIsLoading(true);
       await login(data.email, data.password, rememberMe);
-      addToast({
+      showToast({
         type: 'success',
         title: '¡Bienvenido!',
         message: 'Has iniciado sesión correctamente'
       });
     } catch (error) {
       console.error('Error en login:', error);
-      addToast({
+      showToast({
         type: 'error',
         title: 'Error de autenticación',
         message: error.message || 'No se pudo iniciar sesión, intenta de nuevo'
