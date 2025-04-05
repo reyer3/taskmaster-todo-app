@@ -25,6 +25,29 @@ export const loginUser = async (email, password) => {
       throw new Error('Respuesta vacía del servidor');
     }
     
+    // Formato detectado: {status: 'success', data: {accessToken, user}, message: '...'}
+    if (response.status === 'success' && response.data) {
+      console.log('Detectada respuesta con formato {status, data, message}:', response);
+      
+      const { accessToken, user } = response.data;
+      
+      if (!accessToken) {
+        console.error('No se encontró accessToken en data:', response.data);
+        throw new Error('Token de acceso no encontrado en la respuesta');
+      }
+      
+      if (!user) {
+        console.error('No se encontró user en data:', response.data);
+        throw new Error('Información de usuario no encontrada en la respuesta');
+      }
+      
+      // Restructurar para que coincida con lo que espera AuthContext
+      return {
+        token: accessToken,  // Renombrar accessToken a token
+        user: user
+      };
+    }
+    
     // Si la respuesta no tiene un token o un usuario, pero tiene datos, intenta extraerlos
     if (!response.token && !response.data && response.user) {
       console.log('Respuesta no contiene token directamente, pero tiene otros datos:', response);
@@ -52,7 +75,38 @@ export const loginUser = async (email, password) => {
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const registerUser = async (userData) => {
-  return await api.post('/auth/register', userData);
+  try {
+    const response = await api.post('/auth/register', userData);
+    console.log('Respuesta de registro:', response);
+    
+    // Formato detectado: {status: 'success', data: {accessToken, user}, message: '...'}
+    if (response.status === 'success' && response.data) {
+      console.log('Detectada respuesta con formato {status, data, message}:', response);
+      
+      const { accessToken, user } = response.data;
+      
+      if (!accessToken) {
+        console.error('No se encontró accessToken en data:', response.data);
+        throw new Error('Token de acceso no encontrado en la respuesta');
+      }
+      
+      if (!user) {
+        console.error('No se encontró user en data:', response.data);
+        throw new Error('Información de usuario no encontrada en la respuesta');
+      }
+      
+      // Restructurar para que coincida con lo que espera AuthContext
+      return {
+        token: accessToken,
+        user: user
+      };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error en servicio registerUser:', error);
+    throw error;
+  }
 };
 
 /**
@@ -65,6 +119,17 @@ export const getCurrentUser = async () => {
     console.log('Llamando al endpoint /auth/me...');
     const response = await api.get('/auth/me');
     console.log('Respuesta de /auth/me:', response);
+    
+    // Formato detectado: {status: 'success', data: {user}, message: '...'}
+    if (response.status === 'success' && response.data) {
+      console.log('Detectada respuesta con formato {status, data, message}:', response);
+      
+      // Si user está directamente en data o data.user
+      const user = response.data.user || response.data;
+      
+      return user;
+    }
+    
     return response;
   } catch (error) {
     console.error('Error en getCurrentUser:', error);
