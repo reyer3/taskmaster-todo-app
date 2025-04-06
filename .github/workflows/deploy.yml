@@ -35,18 +35,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18' # Usa Node.js versión 18
-          cache: 'npm' # Habilita caché para npm
-          cache-dependency-path: backend/package-lock.json # Ruta para la caché
+          # Desactivado para evitar problemas con caché
+          # cache: 'npm'
+          # cache-dependency-path: backend/package-lock.json
 
       # 3. Instala dependencias del backend
       - name: Install dependencies
         working-directory: backend # Ejecuta en el directorio backend
         run: npm ci # Instala dependencias limpiamente
 
-      # 4. Ejecuta las pruebas del backend
+      # 4. Ejecuta las pruebas del backend sin usar caché
       - name: Run tests
         working-directory: backend
-        run: npm test
+        run: npm test --no-cache
 
   # Trabajo para construir y desplegar la aplicación
   build-and-deploy:

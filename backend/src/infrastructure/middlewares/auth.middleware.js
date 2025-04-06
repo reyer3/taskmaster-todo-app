@@ -27,15 +27,8 @@ const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    // Comportamiento especial para entorno de pruebas
-    if (process.env.NODE_ENV === 'test') {
-      // Simplemente decodificar el token sin verificación
-      const decoded = jwt.decode(token);
-      if (decoded && decoded.id) {
-        req.user = decoded;
-        return next();
-      }
-    }
+    // Evitar comportamiento especial para entorno de pruebas
+    // para garantizar que los tests sean consistentes en todos los entornos
     
     // CORREGIDO: Uso de await para esperar la resolución de la promesa
     req.user = await authService.verifyToken(token);
