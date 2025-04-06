@@ -1,0 +1,26 @@
+FROM node:18-alpine
+
+# Instalar dependencias para Prisma y bcrypt
+RUN apk add --no-cache python3 make g++ openssl openssl-dev libc6-compat
+
+# Directorio de la aplicación
+WORKDIR /app
+
+# Copiar archivos de dependencias y prisma
+COPY package*.json ./
+COPY src/infrastructure/database/prisma/ ./prisma/
+
+# Instalar dependencias
+RUN npm install
+
+# Generar cliente Prisma
+RUN npx prisma generate
+
+# Instalar nodemon
+RUN npm install -g nodemon
+
+# Puerto de la API
+EXPOSE 4000
+
+# Comando para ejecutar la aplicación
+CMD ["npm", "run", "dev"]
