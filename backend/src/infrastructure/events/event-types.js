@@ -31,9 +31,17 @@ const SystemEvents = {
   HEALTH_CHECK: 'system.health_check',
 };
 
+// Eventos de autenticación
+const AuthEvents = {
+  PASSWORD_RESET_REQUESTED: 'auth.password.reset.requested',
+  PASSWORD_CHANGED: 'auth.password.changed', // Distinto de user.password_changed, este es específico para notificaciones de seguridad
+  NEW_LOGIN: 'auth.login.new',
+  SUSPICIOUS_LOGIN_ATTEMPT: 'auth.login.suspicious',
+};
+
 module.exports = {
   UserEvents,
   TaskEvents,
   SystemEvents,
-  AuthEvents: UserEvents,
+  AuthEvents: UserEvents
 };

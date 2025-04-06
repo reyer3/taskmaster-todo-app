@@ -9,8 +9,6 @@ const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 const handlebars = require('handlebars');
-// --- CORRECCIÓN DE IMPORTACIÓN ---
-// Extrae específicamente la clase AppError del objeto exportado
 const { AppError } = require('../utils/errors/app-error');
 
 /**
@@ -21,6 +19,26 @@ const isProduction = () => {
     const env = process.env.NODE_ENV || 'development';
     return env === 'production';
 };
+
+// Registrar helpers personalizados de Handlebars
+handlebars.registerHelper('eq', function (a, b) {
+    return a === b;
+});
+
+handlebars.registerHelper('formatDate', function (date) {
+    if (!date) return '';
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return date;
+    
+    // Formatea la fecha como "día/mes/año hora:minutos"
+    return dateObj.toLocaleString('es', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+});
 
 class EmailService {
     constructor() {
@@ -122,7 +140,6 @@ class EmailService {
      * @returns {string} - Texto plano
      */
     htmlToText(html) {
-        // (El contenido de esta función está bien)
         return html
             .replace(/<style[^>]*>.*?<\/style>/gs, '')
             .replace(/<script[^>]*>.*?<\/script>/gs, '')
@@ -184,8 +201,11 @@ class EmailService {
         }
     }
 
-    // --- Los métodos sendWelcomeEmail, sendPasswordResetEmail, etc., están bien ---
-    // porque llaman a this.sendEmail, que ya maneja los errores correctamente.
+    /**
+     * Envía un email de bienvenida
+     * @param {Object} user - Usuario destinatario
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendWelcomeEmail(user) {
         return this.sendEmail({
             to: user.email,
@@ -198,6 +218,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un email para restablecer contraseña
+     * @param {Object} user - Usuario destinatario
+     * @param {string} token - Token de restablecimiento
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendPasswordResetEmail(user, token) {
         return this.sendEmail({
             to: user.email,
@@ -211,6 +237,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un recordatorio de tarea
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} task - Tarea a recordar
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendTaskReminderEmail(user, task) {
         return this.sendEmail({
             to: user.email,
@@ -226,6 +258,12 @@ class EmailService {
         });
     }
 
+    /**
+     * Envía un reporte semanal de tareas
+     * @param {Object} user - Usuario destinatario
+     * @param {Object} stats - Estadísticas semanales
+     * @returns {Promise<Object>} Información del envío
+     */
     async sendWeeklyReportEmail(user, stats) {
         // Asegúrate de que las fechas existan antes de llamar a toLocaleDateString
         const weekStartDateString = stats.weekStart ? stats.weekStart.toLocaleDateString() : 'N/A';
