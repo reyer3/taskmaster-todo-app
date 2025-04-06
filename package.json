@@ -1,4 +1,18 @@
 {
+  "name": "taskmaster-todo-app",
+  "version": "1.0.0",
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm install && npm run install:backend && npm run install:frontend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm install",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "vercel-build": "npm run build",
+    "deploy": "vercel deploy --prod"
+  },
   "dependencies": {
     "date-fns": "^4.1.0",
     "lucide-react": "^0.487.0",
@@ -6,6 +20,7 @@
   },
   "devDependencies": {
     "sharp": "^0.34.0",
-    "svg-to-ico": "^1.0.15"
+    "svg-to-ico": "^1.0.15",
+    "vercel": "^33.5.1"
   }
 }

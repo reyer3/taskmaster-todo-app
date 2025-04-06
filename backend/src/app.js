@@ -21,7 +21,10 @@ const notificationRoutes = require('./api/notifications/notification.controller'
 const app = express();
 
 // Configurar middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
@@ -33,6 +36,18 @@ app.use((req, res, next) => {
   if (components) {
     req.components = components;
     req.events = components.events;
+    
+    // Añadir hook para cerrar conexiones al final de la solicitud en entorno serverless
+    if (process.env.VERCEL) {
+      res.on('finish', async () => {
+        try {
+          // No cerramos la conexión completa, solo liberamos recursos si es necesario
+          // En un entorno serverless, las conexiones persistentes son importantes
+        } catch (error) {
+          console.error('Error al liberar recursos:', error);
+        }
+      });
+    }
   }
   next();
 });

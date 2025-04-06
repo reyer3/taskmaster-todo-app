@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copiar archivos package.json y package-lock.json
+COPY package*.json ./
+
+# Instalar todas las dependencias
+RUN npm install
+
+# Instalar dependencias específicas que podrían faltar
+RUN npm install --save date-fns react-datepicker
+
+# Copiar archivos de configuración importantes para estilos
+COPY postcss.config.js tailwind.config.js ./
+
+# Exponer puerto
+EXPOSE 5173
+
+# Comando para desarrollo
+CMD ["npm", "run", "dev", "--", "--host"]

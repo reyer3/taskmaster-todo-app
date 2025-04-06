@@ -15,15 +15,17 @@ const Header = () => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
-  // Cerrar menú al cambiar de ruta
+  // Cerrar menús al cambiar de ruta
   useEffect(() => {
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [location.pathname]);
 
-  // Cerrar menú al hacer clic fuera
+  // Cerrar menú móvil al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (mobileMenuOpen && !event.target.closest('.mobile-menu-container')) {
@@ -34,6 +36,18 @@ const Header = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [mobileMenuOpen]);
+
+  // Cerrar menú de usuario al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuOpen && !event.target.closest('.user-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen]);
 
   // Detectar scroll para cambiar apariencia del header
   useEffect(() => {
@@ -47,6 +61,15 @@ const Header = () => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
+  };
+
+  const toggleUserMenu = () => {
+    setUserMenuOpen(prev => !prev);
+  };
+
+  // Manejar cerrar sesión
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -123,13 +146,16 @@ const Header = () => {
               <div className="hidden md:block">
                 <span className="text-sm font-medium">{user?.name}</span>
               </div>
-              <div className="relative group">
+              <div className="relative user-menu-container">
                 <button 
                   className={`
                     w-9 h-9 rounded-full flex items-center justify-center
                     ${scrolled ? 'bg-gray-200 dark:bg-dark-bg-tertiary' : 'bg-white/20 dark:bg-dark-bg-tertiary'}
                     transition-all duration-300
                   `}
+                  onClick={toggleUserMenu}
+                  aria-label="Menú de usuario"
+                  aria-expanded={userMenuOpen}
                 >
                   {user?.avatar ? (
                     <img src={user.avatar} alt={user?.name} className="w-8 h-8 rounded-full" />
@@ -137,20 +163,22 @@ const Header = () => {
                     <span className="text-lg">{user?.name?.[0]?.toUpperCase()}</span>
                   )}
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary rounded-md shadow-lg py-1 z-10 hidden group-hover:block animate-fade-in">
-                  <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary">
-                    Perfil
-                  </Link>
-                  <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary">
-                    Configuración
-                  </Link>
-                  <button 
-                    onClick={logout}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-bg-secondary text-gray-800 dark:text-dark-text-primary rounded-md shadow-lg py-1 z-10 animate-fade-in">
+                    <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary">
+                      Perfil
+                    </Link>
+                    <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary">
+                      Configuración
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary text-red-600 dark:text-red-500"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -170,7 +198,7 @@ const Header = () => {
       <div 
         className={`fixed inset-0 bg-white dark:bg-dark-bg-primary z-40 transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:hidden`}
+        } md:hidden mobile-menu-container`}
       >
         <div className="flex flex-col h-full pt-20 px-6">
           <nav className="flex-1">
@@ -257,11 +285,8 @@ const Header = () => {
                 Configuración
               </Link>
               <button 
-                onClick={() => {
-                  logout();
-                  toggleMobileMenu();
-                }}
-                className="block w-full text-left py-2 text-gray-800 dark:text-dark-text-primary"
+                onClick={handleLogout}
+                className="block w-full text-left py-2 text-red-600 dark:text-red-500"
               >
                 Cerrar sesión
               </button>
