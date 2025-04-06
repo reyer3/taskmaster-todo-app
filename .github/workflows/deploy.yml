@@ -1,9 +1,13 @@
+# Nombre del workflow
 name: Deploy to urbanlink.pe
 
+# Disparadores del workflow
 on:
+  # Se ejecuta en cada push a la rama main
   push:
     branches:
       - main
+  # Permite ejecución manual desde la interfaz de GitHub Actions
   workflow_dispatch:
     inputs:
       environment:
@@ -15,50 +19,59 @@ on:
           - production
           - staging
 
+# Trabajos a ejecutar
 jobs:
+  # Trabajo para ejecutar pruebas del backend
   test:
     name: Test Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Usa la última versión de Ubuntu
     steps:
+      # 1. Descarga el código del repositorio
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Configura Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          node-version: '18' # Usa Node.js versión 18
+          cache: 'npm' # Habilita caché para npm
+          cache-dependency-path: backend/package-lock.json # Ruta para la caché
 
+      # 3. Instala dependencias del backend
       - name: Install dependencies
-        working-directory: backend
-        run: npm ci
+        working-directory: backend # Ejecuta en el directorio backend
+        run: npm ci # Instala dependencias limpiamente
 
+      # 4. Ejecuta las pruebas del backend
       - name: Run tests
         working-directory: backend
         run: npm test
-        
+
+  # Trabajo para construir y desplegar la aplicación
   build-and-deploy:
     name: Build & Deploy
-    needs: test
+    needs: test # Depende del trabajo 'test'
     runs-on: ubuntu-latest
     steps:
+      # 1. Descarga el código del repositorio
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Configura el agente SSH para la conexión al servidor
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh-private-key-passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
-
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Clave privada SSH desde los secrets
+      # 3. Añade la clave pública del host al archivo known_hosts
       - name: Setup known_hosts
         run: |
-          mkdir -p ~/.ssh
+          mkdir -p ~/.ssh # Crea el directorio .ssh si no existe
+          # Escanea y añade la clave del host
           ssh-keyscan -t rsa,ecdsa,ed25519 ${{ secrets.HOST_IP }} >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts # Asegura los permisos correctos
 
-      # Frontend build
+      # 4. Construcción del Frontend
       - name: Setup Node.js for frontend
         uses: actions/setup-node@v4
         with:
@@ -72,12 +85,13 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
-        run: npm run build
+        run: npm run build # Ejecuta el script de construcción del frontend
         env:
+          # Variables de entorno para la construcción del frontend
           VITE_API_URL: https://api.taskmaster.urbanlink.pe
           NODE_ENV: production
 
-      # Backend build - sólo necesitamos las dependencias
+      # 5. Instalación de dependencias del Backend (solo producción)
       - name: Setup Node.js for backend
         uses: actions/setup-node@v4
         with:
@@ -87,60 +101,61 @@ jobs:
 
       - name: Install backend dependencies (production only)
         working-directory: backend
-        run: npm ci --production
+        run: npm ci --production # Instala solo dependencias de producción
 
-      # Preparar el paquete de despliegue
+      # 6. Preparar el paquete de despliegue
       - name: Prepare deployment package
         run: |
           # Añadir versión y timestamp al despliegue
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          BUILD_VERSION="${GITHUB_SHA::8}"
-          
+          BUILD_VERSION="${GITHUB_SHA::8}" # Usa los primeros 8 caracteres del hash del commit como versión
+
           # Crear archivo de versión
           echo "{\"version\":\"${BUILD_VERSION}\",\"date\":\"${BUILD_DATE}\",\"commit\":\"$GITHUB_SHA\"}" > version.json
-          
+
           # Crear directorio de despliegue
           mkdir -p deploy
-          
-          # Copiar archivos necesarios
+
+          # Copiar archivos de configuración y necesarios
           cp docker-compose.yml deploy/
           cp -r traefik deploy/
           cp version.json deploy/
-          
-          # Frontend
+
+          # Copiar archivos del Frontend
           mkdir -p deploy/frontend
           cp -r frontend/dist deploy/frontend/
           cp frontend/nginx.conf deploy/frontend/
           cp frontend/Dockerfile deploy/frontend/
-          
-          # Backend
+
+          # Copiar archivos del Backend
           mkdir -p deploy/backend
           cp -r backend/src deploy/backend/
           cp backend/package.json backend/package-lock.json backend/Dockerfile deploy/backend/
-          cp -r backend/node_modules deploy/backend/
-          
-          # Crear el archivo tar.gz
+          cp -r backend/node_modules deploy/backend/ # Copia node_modules ya instalados
+
+          # Crear el archivo tar.gz comprimido del paquete
           tar -czf taskmaster-deploy-${BUILD_VERSION}.tar.gz -C deploy .
-          
-          # Guardar información para futuros pasos
+
+          # Guardar la versión para usarla en pasos posteriores
           echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
 
-      # Deploy to server
+      # 7. Desplegar al servidor
       - name: Copy files to server
         run: |
-          # Crear directorio de despliegue en el servidor
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster"
-          
-          # Copiar paquete de despliegue al servidor
-          scp taskmaster-deploy-${BUILD_VERSION}.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }}:~/taskmaster/
-          
-          # Extraer paquete en el servidor
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && tar -xzf taskmaster-deploy-${BUILD_VERSION}.tar.gz"
+          # Crear directorio de despliegue en el servidor si no existe
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster"
 
+          # Copiar el paquete de despliegue al servidor
+          scp taskmaster-deploy-${BUILD_VERSION}.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }}:~/taskmaster/
+
+          # Extraer el paquete en el servidor
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && tar -xzf taskmaster-deploy-${BUILD_VERSION}.tar.gz"
+
+      # 8. Configurar entorno y desplegar con Docker Compose
       - name: Setup environment and deploy
         run: |
-          # Crear archivo .env con variables de entorno
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cat > ~/taskmaster/.env << 'EOL'
+          # Crear archivo .env en el servidor con las variables de entorno necesarias
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cat > ~/taskmaster/.env << 'EOL'
           # Variables generadas automáticamente por GitHub Actions - $(date -u)
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -154,68 +169,69 @@ jobs:
           ENABLE_NOTIFICATIONS=true
           ENABLE_WEBSOCKETS=true
           EOL"
-          
-          # Asegurar permisos adecuados
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "chmod 600 ~/taskmaster/.env"
-          
-          # Crear network si no existe
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker network create web || true"
-          
-          # Crear archivo acme.json con permisos correctos si no existe
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster/traefik/config && test -f ~/taskmaster/traefik/config/acme.json || (touch ~/taskmaster/traefik/config/acme.json && chmod 600 ~/taskmaster/traefik/config/acme.json)"
-          
-          # Desplegar con docker-compose
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose down && docker-compose up -d --build"
 
+          # Asegurar permisos adecuados para el archivo .env
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "chmod 600 ~/taskmaster/.env"
+
+          # Crear la red 'web' de Docker si no existe (para Traefik)
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker network create web || true"
+
+          # Crear archivo acme.json para certificados Let's Encrypt si no existe y asegurar permisos
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster/traefik/config && test -f ~/taskmaster/traefik/config/acme.json || (touch ~/taskmaster/traefik/config/acme.json && chmod 600 ~/taskmaster/traefik/config/acme.json)"
+
+          # Detener contenedores actuales, reconstruir y levantar los nuevos con docker-compose
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose down && docker-compose up -d --build"
+
+      # 9. Verificar el despliegue
       - name: Verify deployment
         run: |
           # Verificar que los contenedores estén en ejecución
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose ps"
-          
-          # Esperar a que los servicios estén disponibles
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose ps"
+
+          # Esperar un tiempo prudencial para que los servicios inicien
           echo "Esperando a que los servicios estén disponibles..."
           sleep 15
-          
-          # Verificar que backend responde
+
+          # Verificar que el endpoint de salud del backend responde correctamente
           if curl -s --retry 3 --max-time 10 https://api.taskmaster.urbanlink.pe/health | grep -q "OK"; then
             echo "✅ Backend API está funcionando correctamente"
           else
             echo "❌ Backend API no responde correctamente"
-            exit 1
+            exit 1 # Falla el workflow si el backend no responde
           fi
-          
-          # Verificar que frontend responde
+
+          # Verificar que el frontend responde con código 200 OK
           if curl -s --retry 3 --max-time 10 -I https://taskmaster.urbanlink.pe | grep -q "200 OK"; then
             echo "✅ Frontend está funcionando correctamente"
           else
             echo "❌ Frontend no responde correctamente"
-            exit 1
+            exit 1 # Falla el workflow si el frontend no responde
           fi
 
-      # Limpieza y optimización
+      # 10. Limpieza y optimización post-despliegue
       - name: Clean up
         run: |
-          # Eliminar imágenes antiguas no utilizadas
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker image prune -af --filter 'until=24h'"
-          
-          # Eliminar paquetes de despliegue antiguos
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "find ~/taskmaster -name 'taskmaster-deploy-*.tar.gz' -type f -mtime +7 -delete"
-          
-          # Guardar versión actual
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "echo '${BUILD_VERSION}' > ~/taskmaster/CURRENT_VERSION"
-          
+          # Eliminar imágenes de Docker antiguas no utilizadas para liberar espacio
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker image prune -af --filter 'until=24h'"
+
+          # Eliminar paquetes de despliegue antiguos (más de 7 días)
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "find ~/taskmaster -name 'taskmaster-deploy-*.tar.gz' -type f -mtime +7 -delete"
+
+          # Guardar la versión actual desplegada en un archivo
+          ssh -p 2222 ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "echo '${BUILD_VERSION}' > ~/taskmaster/CURRENT_VERSION"
+
           echo "🚀 Despliegue completado con éxito. Versión: ${BUILD_VERSION}"
 
-      # Notificar el resultado del despliegue (opcional)
+      # 11. Notificar el resultado del despliegue a Slack (opcional)
       - name: Notify deployment
-        if: always()
+        if: always() # Se ejecuta siempre, incluso si pasos anteriores fallaron
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: deploys
-          SLACK_COLOR: ${{ job.status }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }} # Webhook de Slack desde secrets
+          SLACK_CHANNEL: deploys # Canal de Slack
+          SLACK_COLOR: ${{ job.status }} # Color basado en el estado del job (success, failure)
           SLACK_TITLE: "Despliegue a Producción"
           SLACK_MESSAGE: "TaskMaster v${BUILD_VERSION} - ${{ job.status == 'success' && '✅ Despliegue exitoso' || '❌ Despliegue fallido' }}"
           SLACK_FOOTER: "GitHub Actions"
-          MSG_MINIMAL: false
-        continue-on-error: true
+          MSG_MINIMAL: false # Formato no minimalista del mensaje
+        continue-on-error: true # No falla el workflow si la notificación falla
