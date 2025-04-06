@@ -27,15 +27,13 @@ const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    // Evitar comportamiento especial para entorno de pruebas
-    // para garantizar que los tests sean consistentes en todos los entornos
-    
-    // CORREGIDO: Uso de await para esperar la resolución de la promesa
+    // Verificar el token usando el servicio de autenticación
     req.user = await authService.verifyToken(token);
-
-    // Continuar con la solicitud
+    
+    // Si todo está bien, continuar con la solicitud
     next();
   } catch (error) {
+    // Convertir el error a un error de aplicación y pasarlo al siguiente middleware
     next(convertToAppError(error));
   }
 };
