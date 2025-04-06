@@ -1,0 +1,221 @@
+name: Deploy to urbanlink.pe
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno de despliegue'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+        
+  build-and-deploy:
+    name: Build & Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key-passphrase: ${{ secrets.SSH_PRIVATE_KEY_PASSPHRASE }}
+
+      - name: Setup known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -t rsa,ecdsa,ed25519 ${{ secrets.HOST_IP }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # Frontend build
+      - name: Setup Node.js for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: https://api.taskmaster.urbanlink.pe
+          NODE_ENV: production
+
+      # Backend build - sólo necesitamos las dependencias
+      - name: Setup Node.js for backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies (production only)
+        working-directory: backend
+        run: npm ci --production
+
+      # Preparar el paquete de despliegue
+      - name: Prepare deployment package
+        run: |
+          # Añadir versión y timestamp al despliegue
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          BUILD_VERSION="${GITHUB_SHA::8}"
+          
+          # Crear archivo de versión
+          echo "{\"version\":\"${BUILD_VERSION}\",\"date\":\"${BUILD_DATE}\",\"commit\":\"$GITHUB_SHA\"}" > version.json
+          
+          # Crear directorio de despliegue
+          mkdir -p deploy
+          
+          # Copiar archivos necesarios
+          cp docker-compose.yml deploy/
+          cp -r traefik deploy/
+          cp version.json deploy/
+          
+          # Frontend
+          mkdir -p deploy/frontend
+          cp -r frontend/dist deploy/frontend/
+          cp frontend/nginx.conf deploy/frontend/
+          cp frontend/Dockerfile deploy/frontend/
+          
+          # Backend
+          mkdir -p deploy/backend
+          cp -r backend/src deploy/backend/
+          cp backend/package.json backend/package-lock.json backend/Dockerfile deploy/backend/
+          cp -r backend/node_modules deploy/backend/
+          
+          # Crear el archivo tar.gz
+          tar -czf taskmaster-deploy-${BUILD_VERSION}.tar.gz -C deploy .
+          
+          # Guardar información para futuros pasos
+          echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
+
+      # Deploy to server
+      - name: Copy files to server
+        run: |
+          # Crear directorio de despliegue en el servidor
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster"
+          
+          # Copiar paquete de despliegue al servidor
+          scp taskmaster-deploy-${BUILD_VERSION}.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }}:~/taskmaster/
+          
+          # Extraer paquete en el servidor
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && tar -xzf taskmaster-deploy-${BUILD_VERSION}.tar.gz"
+
+      - name: Setup environment and deploy
+        run: |
+          # Crear archivo .env con variables de entorno
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cat > ~/taskmaster/.env << 'EOL'
+          # Variables generadas automáticamente por GitHub Actions - $(date -u)
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION || '1d' }}
+          JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION || '7d' }}
+          CLOUDFLARE_EMAIL=${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_API_KEY=${{ secrets.CLOUDFLARE_API_KEY }}
+          COMPOSE_PROJECT_NAME=taskmaster
+          NODE_ENV=production
+          CORS_ORIGIN=https://taskmaster.urbanlink.pe
+          ENABLE_NOTIFICATIONS=true
+          ENABLE_WEBSOCKETS=true
+          EOL"
+          
+          # Asegurar permisos adecuados
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "chmod 600 ~/taskmaster/.env"
+          
+          # Crear network si no existe
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker network create web || true"
+          
+          # Crear archivo acme.json con permisos correctos si no existe
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "mkdir -p ~/taskmaster/traefik/config && test -f ~/taskmaster/traefik/config/acme.json || (touch ~/taskmaster/traefik/config/acme.json && chmod 600 ~/taskmaster/traefik/config/acme.json)"
+          
+          # Desplegar con docker-compose
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose down && docker-compose up -d --build"
+
+      - name: Verify deployment
+        run: |
+          # Verificar que los contenedores estén en ejecución
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "cd ~/taskmaster && docker-compose ps"
+          
+          # Esperar a que los servicios estén disponibles
+          echo "Esperando a que los servicios estén disponibles..."
+          sleep 15
+          
+          # Verificar que backend responde
+          if curl -s --retry 3 --max-time 10 https://api.taskmaster.urbanlink.pe/health | grep -q "OK"; then
+            echo "✅ Backend API está funcionando correctamente"
+          else
+            echo "❌ Backend API no responde correctamente"
+            exit 1
+          fi
+          
+          # Verificar que frontend responde
+          if curl -s --retry 3 --max-time 10 -I https://taskmaster.urbanlink.pe | grep -q "200 OK"; then
+            echo "✅ Frontend está funcionando correctamente"
+          else
+            echo "❌ Frontend no responde correctamente"
+            exit 1
+          fi
+
+      # Limpieza y optimización
+      - name: Clean up
+        run: |
+          # Eliminar imágenes antiguas no utilizadas
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "docker image prune -af --filter 'until=24h'"
+          
+          # Eliminar paquetes de despliegue antiguos
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "find ~/taskmaster -name 'taskmaster-deploy-*.tar.gz' -type f -mtime +7 -delete"
+          
+          # Guardar versión actual
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST_IP }} "echo '${BUILD_VERSION}' > ~/taskmaster/CURRENT_VERSION"
+          
+          echo "🚀 Despliegue completado con éxito. Versión: ${BUILD_VERSION}"
+
+      # Notificar el resultado del despliegue (opcional)
+      - name: Notify deployment
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: deploys
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: "Despliegue a Producción"
+          SLACK_MESSAGE: "TaskMaster v${BUILD_VERSION} - ${{ job.status == 'success' && '✅ Despliegue exitoso' || '❌ Despliegue fallido' }}"
+          SLACK_FOOTER: "GitHub Actions"
+          MSG_MINIMAL: false
+        continue-on-error: true

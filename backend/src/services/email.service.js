@@ -286,17 +286,18 @@ class EmailService {
     }
 
     /**
-     * Envía un resumen de notificaciones
+     * Envía un resumen de notificaciones al usuario
      * @param {Object} user - Usuario destinatario
      * @param {Array} notifications - Lista de notificaciones
      * @param {Object} options - Opciones adicionales
-     * @returns {Promise<Object>} Información del envío
+     * @returns {Promise<object>} Información del envío
      */
     async sendNotificationDigestEmail(user, notifications, options = {}) {
-        const maxNotificationsInEmail = options.maxItems || 5;
-        const displayNotifications = notifications.slice(0, maxNotificationsInEmail);
-        const hasMoreNotifications = notifications.length > maxNotificationsInEmail;
-        const remainingCount = notifications.length - maxNotificationsInEmail;
+        const { maxItems = 5 } = options;
+        
+        const limitedNotifications = notifications.slice(0, maxItems);
+        const hasMore = notifications.length > maxItems;
+        const remainingCount = hasMore ? notifications.length - maxItems : 0;
         
         return this.sendEmail({
             to: user.email,
@@ -305,43 +306,30 @@ class EmailService {
             context: {
                 name: user.name,
                 notificationCount: notifications.length,
-                notifications: displayNotifications,
-                hasMoreNotifications,
-                remainingCount,
+                notifications: limitedNotifications,
+                hasMoreNotifications: hasMore,
+                remainingCount: remainingCount,
                 notificationsUrl: `${this.baseUrl}/notifications`
             }
         });
     }
-    
+
     /**
-     * Envía una notificación inmediata por email
+     * Envía una notificación inmediata al usuario
      * @param {Object} user - Usuario destinatario
-     * @param {Object} notification - Datos de la notificación
-     * @returns {Promise<Object>} Información del envío
+     * @param {Object} notification - Notificación a enviar
+     * @returns {Promise<object>} Información del envío
      */
     async sendImmediateNotificationEmail(user, notification) {
-        // Determinar el asunto según el tipo de notificación
-        let subject = 'Nueva notificación de TaskMaster';
-        
-        if (notification.type.startsWith('task.')) {
-            subject = `Notificación de tarea: ${notification.title}`;
-        } else if (notification.type.startsWith('user.')) {
-            subject = 'Notificación de usuario';
-        } else if (notification.type.startsWith('system.')) {
-            subject = 'Notificación del sistema';
-        }
-        
-        // Enviar un email que contiene una sola notificación
         return this.sendEmail({
             to: user.email,
-            subject,
-            template: 'notification-digest', // Usamos la misma plantilla
+            subject: `Notificación de tarea: ${notification.title}`,
+            template: 'notification-digest',
             context: {
                 name: user.name,
                 notificationCount: 1,
                 notifications: [notification],
-                hasMoreNotifications: false,
-                notificationsUrl: `${this.baseUrl}/notifications`
+                hasMoreNotifications: false
             }
         });
     }
@@ -350,14 +338,5 @@ class EmailService {
 // Exportar una instancia singleton
 const emailService = new EmailService();
 
+// Exportar solo la instancia singleton
 module.exports = emailService;
-
-// Para asegurar que los métodos se consideren utilizados, exportamos también métodos individuales
-module.exports.sendWelcomeEmail = (user) => emailService.sendWelcomeEmail(user);
-module.exports.sendPasswordResetEmail = (user, token) => emailService.sendPasswordResetEmail(user, token);
-module.exports.sendTaskReminderEmail = (user, task) => emailService.sendTaskReminderEmail(user, task);
-module.exports.sendWeeklyReportEmail = (user, stats) => emailService.sendWeeklyReportEmail(user, stats);
-module.exports.sendNotificationDigestEmail = (user, notifications, options) => 
-    emailService.sendNotificationDigestEmail(user, notifications, options);
-module.exports.sendImmediateNotificationEmail = (user, notification) => 
-    emailService.sendImmediateNotificationEmail(user, notification);

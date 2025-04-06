@@ -1,7 +1,10 @@
-import { createContext, useState, useCallback } from 'react';
+import { createContext, useState, useCallback, useContext } from 'react';
 
 // Creación del contexto
 export const ToastContext = createContext();
+
+// Contador para ayudar a generar IDs únicos
+let toastCounter = 0;
 
 /**
  * Proveedor del contexto de notificaciones toast
@@ -18,7 +21,10 @@ export const ToastProvider = ({ children }) => {
    * @param {number} toast.duration - Duración en ms (por defecto 5000ms)
    */
   const showToast = useCallback((toast) => {
-    const id = Date.now().toString();
+    // Genera un ID único combinando timestamp, un contador y un valor aleatorio
+    toastCounter += 1;
+    const id = `${Date.now()}_${toastCounter}_${Math.random().toString(36).substring(2, 9)}`;
+    
     const newToast = {
       id,
       message: toast.message,
@@ -52,19 +58,19 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   // Métodos específicos por tipo
-  const showSuccessToast = useCallback((message, duration) => {
+  const success = useCallback((message, duration) => {
     return showToast({ message, type: 'success', duration });
   }, [showToast]);
 
-  const showErrorToast = useCallback((message, duration) => {
+  const error = useCallback((message, duration) => {
     return showToast({ message, type: 'error', duration });
   }, [showToast]);
 
-  const showInfoToast = useCallback((message, duration) => {
+  const info = useCallback((message, duration) => {
     return showToast({ message, type: 'info', duration });
   }, [showToast]);
 
-  const showWarningToast = useCallback((message, duration) => {
+  const warning = useCallback((message, duration) => {
     return showToast({ message, type: 'warning', duration });
   }, [showToast]);
 
@@ -74,11 +80,23 @@ export const ToastProvider = ({ children }) => {
     showToast,
     removeToast,
     clearToasts,
-    showSuccessToast,
-    showErrorToast,
-    showInfoToast,
-    showWarningToast
+    success,
+    error,
+    info,
+    warning
   };
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+};
+
+/**
+ * Hook para utilizar el contexto de notificaciones toast
+ * @returns {Object} Funciones y estado de las notificaciones toast
+ */
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast debe usarse dentro de un ToastProvider');
+  }
+  return context;
 };

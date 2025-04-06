@@ -118,6 +118,7 @@ flowchart TD
     classDef devops fill:#ffe0b2,stroke:#fb8c00,stroke-width:2px;
 ```
 
+
 ## 🌿 Flujo de Trabajo Git (Git Flow)
 
 Utilizamos **Git Flow** como estrategia de branching, siguiendo nuestra [decisión arquitectónica documentada en ADR-0001](./docs/architecture/decisions/0001-use-gitflow-for-development-workflow.md).

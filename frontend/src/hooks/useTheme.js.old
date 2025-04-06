@@ -1,0 +1,38 @@
+import { useState, useEffect } from 'react';
+
+/**
+ * Hook personalizado para gestionar el tema oscuro/claro de la aplicación
+ * @returns {Object} { darkMode, toggleDarkMode } - Estado del tema y función para cambiarlo
+ */
+export const useTheme = () => {
+  // Inicializar desde localStorage o preferencia del sistema
+  const [darkMode, setDarkMode] = useState(() => {
+    // Verificar si hay una preferencia guardada
+    const savedTheme = localStorage.getItem('darkMode');
+    if (savedTheme !== null) {
+      return savedTheme === 'true';
+    }
+    // Si no hay preferencia guardada, usar la preferencia del sistema
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  // Aplicar el tema cuando cambie
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    // Guardar preferencia en localStorage
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
+
+  // Función para cambiar entre temas
+  const toggleDarkMode = () => {
+    setDarkMode(prevMode => !prevMode);
+  };
+
+  return { darkMode, toggleDarkMode };
+};
+
+export default useTheme;

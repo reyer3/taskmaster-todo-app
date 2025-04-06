@@ -28,9 +28,25 @@ async function bootstrap(options = {}, server = null) {
   console.log('✅ Sistema de eventos inicializado');
   
   // Inicializar conexión a base de datos
-  const prisma = new PrismaClient();
+  // En entorno serverless, usamos la misma instancia de Prisma para todas las solicitudes
+  // para optimizar conexiones
+  const prisma = global.prisma || new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+    // Configuración optimizada para entorno serverless
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      },
+    },
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    global.prisma = prisma;
+  }
+
   try {
-    await prisma.$connect();
+    // Verificar la conexión a la base de datos haciendo una consulta simple
+    await prisma.$queryRaw`SELECT 1+1 AS result`;
     console.log('✅ Conexión a la base de datos establecida');
   } catch (error) {
     console.error('❌ Error conectando a la base de datos:', error);

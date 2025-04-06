@@ -1,22 +1,65 @@
-# Tests End-to-End
+# Pruebas End-to-End (E2E)
 
-Esta carpeta contiene los tests end-to-end para el backend de la aplicación, verificando flujos completos desde la API hasta la base de datos.
+Esta carpeta contiene las pruebas E2E para la aplicación TaskMaster. Estas pruebas verifican el funcionamiento completo de la aplicación, simulando las interacciones reales de los usuarios.
 
-## Organización
+## Configuración
+
+Para ejecutar las pruebas E2E, necesitas:
+
+1. Una base de datos de prueba separada (configurada en `.env.test`)
+2. Todas las dependencias del proyecto instaladas
+
+## Variables de entorno
+
+Crea un archivo `.env.test` en la raíz del proyecto con las siguientes variables:
 
 ```
-e2e/
-├── auth/           # Tests E2E para flujos de autenticación
-├── tasks/          # Tests E2E para gestión de tareas
-└── utils/          # Utilidades compartidas para tests E2E
+NODE_ENV=test
+DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/taskmaster_test
+JWT_SECRET=test-jwt-secret
+PORT=4001
+EMAIL_FROM=test@taskmaster.com
+FRONTEND_URL=http://localhost:3000
 ```
 
-## Enfoque
+## Ejecutar las pruebas
 
-Los tests end-to-end deben:
+Para ejecutar todas las pruebas E2E:
 
-1. Probar flujos completos de usuarios
-2. Interactuar con el sistema a través de su API pública
-3. Utilizar una base de datos dedicada para testing
-4. Simular un entorno lo más cercano posible a producción
-5. Cubrir los casos de uso principales de la aplicación
+```bash
+npm run test:e2e
+```
+
+Para ejecutar una prueba específica:
+
+```bash
+npm run test:e2e -- auth.e2e.test.js
+```
+
+## Estructura de pruebas E2E
+
+Cada archivo de prueba E2E:
+
+1. Configura un entorno aislado
+2. Crea datos de prueba necesarios
+3. Realiza llamadas a la API completa
+4. Verifica resultados esperados
+5. Limpia los datos creados
+
+## Consideraciones
+
+- Las pruebas E2E son más lentas que las unitarias o de integración
+- Requieren una base de datos real (aunque de prueba)
+- Pueden producir falsos negativos debido a factores externos (red, timing, etc.)
+- Son excelentes para validar flujos completos de usuario
+
+## Pruebas implementadas
+
+- **auth.e2e.test.js**: Prueba el flujo completo de autenticación (registro, login, perfil, cambio de contraseña, logout)
+
+## Pruebas pendientes
+
+- Flujo de gestión de tareas (CRUD)
+- Notificaciones en tiempo real
+- Flujos de permisos y autorización
+- Flujos de gestión de preferencias
