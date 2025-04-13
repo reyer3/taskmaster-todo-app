@@ -5,6 +5,7 @@ import LoginPage from './features/auth/components/LoginPage';
 import RegisterPage from './features/auth/components/RegisterPage';
 import TasksPage from './features/tasks/components/TasksPage';
 import DashboardPage from './features/dashboard/components/DashboardPage';
+import CalendarPage from './features/calendar/components/CalendarPage';
 import NotFoundPage from './components/NotFoundPage';
 import { useToast } from './context/ToastContext';
 import Toast from './components/common/Toast';
@@ -77,6 +78,11 @@ function App() {
           <Route path="tasks" element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          } />
+          <Route path="calendar" element={
+            <ProtectedRoute>
+              <CalendarPage />
             </ProtectedRoute>
           } />
           
