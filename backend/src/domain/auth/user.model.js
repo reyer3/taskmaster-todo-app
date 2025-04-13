@@ -153,6 +153,7 @@ class User {
                 email,
                 name,
                 password,
+                timezone = 'UTC',
                 createdAt = new Date(),
                 updatedAt = new Date(),
                 isActive = true
@@ -161,6 +162,7 @@ class User {
     this._email = email instanceof Email ? email : new Email(email);
     this._name = this._validateName(name);
     this._password = password instanceof Password ? password : new Password(password, true);
+    this._timezone = timezone;
     this._createdAt = createdAt instanceof Date ? createdAt : new Date(createdAt);
     this._updatedAt = updatedAt instanceof Date ? updatedAt : new Date(updatedAt);
     this._isActive = isActive;
@@ -179,6 +181,7 @@ class User {
   get id() { return this._id; }
   get email() { return this._email.toString(); }
   get name() { return this._name; }
+  get timezone() { return this._timezone; }
   get createdAt() { return new Date(this._createdAt); } // Devolver copia para inmutabilidad
   get updatedAt() { return new Date(this._updatedAt); } // Devolver copia para inmutabilidad
   get isActive() { return this._isActive; }
@@ -204,6 +207,11 @@ class User {
         this._email = newEmail;
         changedFields.email = true;
       }
+    }
+
+    if (updates.timezone && updates.timezone !== this._timezone) {
+      this._timezone = updates.timezone;
+      changedFields.timezone = true;
     }
 
     // Solo si hubo cambios, actualizamos
@@ -295,6 +303,7 @@ class User {
       email: data.email,
       name: data.name,
       password: new Password(data.passwordHash, true),
+      timezone: data.timezone || 'UTC',
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       isActive: data.isActive
@@ -312,6 +321,7 @@ class User {
       name: this.name,
       email: this.email,
       passwordHash: this.passwordHash,
+      timezone: this.timezone,
       isActive: this.isActive,
       // Solo incluir si no son manejados automáticamente por la ORM/base de datos
       // createdAt: this.createdAt,
@@ -329,6 +339,7 @@ class User {
       id: this.id,
       name: this.name,
       email: this.email,
+      timezone: this.timezone,
       isActive: this.isActive,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt

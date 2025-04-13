@@ -6,15 +6,15 @@ const mockAuthService = {
   verifyToken: jest.fn(),
 };
 
-// Mock para AuthService
+// Mock para AuthService - eliminar {virtual: true}
 jest.mock('../../../../src/services/auth.service', () => ({
   AuthService: jest.fn().mockImplementation(() => mockAuthService)
-}), {virtual: true});
+}));
 
-// Mock para UserRepository
+// Mock para UserRepository - eliminar {virtual: true}
 jest.mock('../../../../src/infrastructure/repositories/user.repository', () => ({
   UserRepository: jest.fn().mockImplementation(() => ({}))
-}), {virtual: true});
+}));
 
 const { authMiddleware, adminMiddleware } = require('../../../../src/infrastructure/middlewares/auth.middleware');
 const { AuthenticationError, AuthorizationError } = require('../../../../src/utils/errors/app-error');

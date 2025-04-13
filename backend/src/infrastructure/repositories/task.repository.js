@@ -100,6 +100,42 @@ class TaskRepository {
 
     return tasks.map(task => new Task(task));
   }
+
+  /**
+   * Busca tareas por un rango de fechas
+   * 
+   * @param {string} userId - ID del usuario
+   * @param {Date} startDate - Fecha de inicio
+   * @param {Date} endDate - Fecha de fin
+   * @returns {Promise<Array>} Lista de tareas
+   */
+  async findByDateRange(userId, startDate, endDate) {
+    try {
+      // Convertir a ISOString para comparación en la base de datos
+      const startIso = startDate.toISOString();
+      const endIso = endDate.toISOString();
+      
+      // Filtrar por userId y dueDate entre las fechas dadas
+      const tasks = await prisma.task.findMany({
+        where: {
+          userId: userId,
+          dueDate: {
+            not: null,
+            gte: startIso,
+            lte: endIso
+          }
+        },
+        orderBy: {
+          dueDate: 'asc'
+        }
+      });
+      
+      return tasks.map(task => new Task(task));
+    } catch (error) {
+      console.error('Error al buscar tareas por rango de fechas:', error);
+      throw new Error('Error al buscar tareas por rango de fechas');
+    }
+  }
 }
 
 module.exports = { TaskRepository };

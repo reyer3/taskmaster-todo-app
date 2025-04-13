@@ -38,8 +38,12 @@ describe('UserRepository', () => {
     // Reset todos los mocks
     jest.clearAllMocks();
     
-    // Crear una instancia del repositorio
+    // Crear una instancia del repositorio con el mock de Prisma
     userRepository = new UserRepository(mockEventPublisher);
+    userRepository._prisma = { 
+      user: mockPrismaUser,
+      $transaction: mockPrismaUser.$transaction
+    };
     
     // Datos de usuario de prueba
     mockUserData = {
@@ -60,13 +64,7 @@ describe('UserRepository', () => {
       passwordHash: 'hashed_password',
       isActive: true,
       events: [],
-      toPersistence: jest.fn().mockReturnValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        passwordHash: 'hashed_password',
-        isActive: true
-      }),
+      toPersistence: jest.fn().mockReturnValue(mockUserData),
       clearEvents: jest.fn(),
       deactivate: jest.fn()
     };

@@ -29,9 +29,27 @@ class TaskService {
    * Crea una nueva tarea
    * @param {Object} taskData - Datos de la tarea
    * @param {string} userId - ID del usuario propietario
+   * @param {string} timezone - Zona horaria del usuario (opcional)
    * @returns {Promise<Task>} Tarea creada
    */
-  async createTask(taskData, userId) {
+  async createTask(taskData, userId, timezone = null) {
+    // Si no se provee timezone, obtener la del usuario desde el repositorio de usuarios
+    let userTimezone = timezone;
+    
+    if (!userTimezone) {
+      try {
+        // Intentar obtener usuario desde el repositorio de usuarios (si está disponible)
+        if (this.userRepository) {
+          const user = await this.userRepository.findById(userId);
+          if (user) {
+            userTimezone = user.timezone;
+          }
+        }
+      } catch (error) {
+        console.warn('No se pudo obtener la zona horaria del usuario:', error.message);
+      }
+    }
+    
     const task = new Task({
       id: uuidv4(),
       title: taskData.title,
@@ -40,7 +58,8 @@ class TaskService {
       dueDate: taskData.dueDate || null,
       priority: taskData.priority || 'none',
       category: taskData.category || 'personal',
-      completed: false
+      completed: false,
+      timezone: userTimezone || 'UTC'
     });
 
     const createdTask = await this.taskRepository.create(task);
@@ -52,6 +71,7 @@ class TaskService {
       title: createdTask.title,
       dueDate: createdTask.dueDate,
       priority: createdTask.priority,
+      timezone: createdTask.timezone,
       timestamp: new Date().toISOString()
     });
 
@@ -255,6 +275,32 @@ class TaskService {
     }
     
     return tasks;
+  }
+
+  /**
+   * Obtiene tareas en un rango de fechas específico
+   * 
+   * @param {string} userId - ID del usuario
+   * @param {string} startDate - Fecha de inicio (YYYY-MM-DD)
+   * @param {string} endDate - Fecha de fin (YYYY-MM-DD)
+   * @returns {Promise<Array>} Lista de tareas
+   */
+  async getTasksByDateRange(userId, startDate, endDate) {
+    try {
+      // Convertir strings de fecha a objetos Date para comparación
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      // Buscar tareas del usuario en el rango de fechas
+      const tasks = await this.taskRepository.findByDateRange(userId, start, end);
+      return tasks;
+    } catch (error) {
+      console.error('Error al obtener tareas por rango de fechas:', error);
+      throw new Error('No se pudieron obtener las tareas por rango de fechas');
+    }
   }
 }
 
