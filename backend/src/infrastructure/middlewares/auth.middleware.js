@@ -27,22 +27,13 @@ const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    // Comportamiento especial para entorno de pruebas
-    if (process.env.NODE_ENV === 'test') {
-      // Simplemente decodificar el token sin verificación
-      const decoded = jwt.decode(token);
-      if (decoded && decoded.id) {
-        req.user = decoded;
-        return next();
-      }
-    }
-    
-    // CORREGIDO: Uso de await para esperar la resolución de la promesa
+    // Verificar el token usando el servicio de autenticación
     req.user = await authService.verifyToken(token);
-
-    // Continuar con la solicitud
+    
+    // Si todo está bien, continuar con la solicitud
     next();
   } catch (error) {
+    // Convertir el error a un error de aplicación y pasarlo al siguiente middleware
     next(convertToAppError(error));
   }
 };

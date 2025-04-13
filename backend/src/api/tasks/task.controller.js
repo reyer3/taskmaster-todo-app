@@ -59,7 +59,12 @@ router.get('/upcoming', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const taskData = req.body;
-    const task = await taskService.createTask(taskData, req.user.id);
+    // Obtener timezone desde el body o del usuario en la solicitud
+    const timezone = taskData.timezone || req.user.timezone;
+    
+    delete taskData.timezone; // Eliminamos del objeto de datos para evitar duplicidad
+    
+    const task = await taskService.createTask(taskData, req.user.id, timezone);
     res.status(201).json(task);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -147,6 +152,38 @@ router.patch('/:id/complete', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: error.message });
     }
     res.status(400).json({ message: error.message });
+  }
+});
+
+/**
+ * Obtiene tareas por rango de fechas
+ * 
+ * @route GET /api/tasks/by-date-range
+ * @param {import('express').Request} req - Objeto de solicitud Express
+ * @param {import('express').Response} res - Objeto de respuesta Express
+ * @returns {Promise<void>}
+ */
+router.get('/by-date-range', authMiddleware, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "Se requieren los parámetros 'startDate' y 'endDate'" });
+    }
+    
+    // Validar formato de fechas
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      return res.status(400).json({ message: "Formato de fecha inválido. Use YYYY-MM-DD" });
+    }
+    
+    const tasks = await taskService.getTasksByDateRange(req.user.id, startDate, endDate);
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error en endpoint by-date-range:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

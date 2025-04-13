@@ -23,6 +23,7 @@ class Task {
    * @param {string} data.userId - ID del usuario propietario
    * @param {Date|string} data.createdAt - Fecha de creación
    * @param {Date|string} data.updatedAt - Fecha de última actualización
+   * @param {string} data.timezone - Zona horaria del usuario (opcional)
    */
   constructor(data) {
     this.id = data.id;
@@ -35,21 +36,58 @@ class Task {
     this.userId = data.userId;
     this.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
     this.updatedAt = data.updatedAt ? new Date(data.updatedAt) : new Date();
+    this.timezone = data.timezone || 'UTC';
 
-    this.validate();
+    this.validate(this.timezone);
+  }
+
+  /**
+   * Valida que una fecha no sea anterior a hoy
+   * @param {Date|string} date - Fecha a validar
+   * @param {string} timezone - Zona horaria del usuario (por defecto 'UTC')
+   * @throws {Error} Si la fecha es anterior a hoy
+   * @private
+   */
+  _validateDueDate(date, timezone = 'UTC') {
+    if (!date) return; // Si no hay fecha, no validamos
+
+    // Obtener la fecha actual en la zona horaria del usuario
+    const today = new Date();
+    let todayInUserTimezone;
+    
+    try {
+      // Crear "hoy" en la zona horaria del usuario
+      todayInUserTimezone = new Date(today.toLocaleString('en-US', { timeZone: timezone }));
+    } catch (error) {
+      // Si hay error con la zona horaria proporcionada, usar UTC
+      console.warn(`Zona horaria inválida: ${timezone}, usando UTC como respaldo`);
+      todayInUserTimezone = new Date(today.toLocaleString('en-US', { timeZone: 'UTC' }));
+    }
+    
+    const todayStr = todayInUserTimezone.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    const dueDateObj = new Date(date);
+    const dueDateStr = dueDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Comparar solo las fechas sin hora
+    // Nota: La comparación permite fechas del día actual (dueDateStr == todayStr)
+    if (dueDateStr < todayStr) {
+      throw new Error('La fecha de vencimiento no puede ser en el pasado');
+    }
   }
 
   /**
    * Valida que la tarea tenga los datos requeridos
+   * @param {string} timezone - Zona horaria del usuario (opcional)
    * @throws {Error} Si la validación falla
    */
-  validate() {
+  validate(timezone = 'UTC') {
     this._validateTitle(this.title);
     this._validateId(this.id);
     this._validateUserId(this.userId);
 
-    if (this.dueDate && this.dueDate < new Date(new Date().setHours(0, 0, 0, 0))) {
-      throw new Error('La fecha de vencimiento no puede ser en el pasado');
+    if (this.dueDate) {
+      this._validateDueDate(this.dueDate, timezone);
     }
   }
 
@@ -203,12 +241,18 @@ class Task {
   /**
    * Actualiza la fecha de vencimiento de la tarea
    * @param {Date|string} newDueDate - Nueva fecha de vencimiento
+   * @param {string} timezone - Zona horaria del usuario (opcional)
    * @returns {Task} La instancia actual para encadenamiento
    */
-  updateDueDate(newDueDate) {
+  updateDueDate(newDueDate, timezone = null) {
     if (newDueDate !== null && !(newDueDate instanceof Date) && isNaN(new Date(newDueDate).getTime())) {
       throw new Error('La fecha de vencimiento debe ser una fecha válida o null');
     }
+    
+    if (newDueDate) {
+      this._validateDueDate(newDueDate, timezone || this.timezone);
+    }
+    
     this.dueDate = newDueDate ? new Date(newDueDate) : null;
     this.updatedAt = new Date();
     return this;
@@ -224,9 +268,12 @@ class Task {
    * @param {string} data.category - Nueva categoría
    * @param {string} data.priority - Nueva prioridad
    * @param {Date|string} data.dueDate - Nueva fecha de vencimiento
+   * @param {string} data.timezone - Zona horaria del usuario (opcional)
    * @returns {Task} La instancia actual para encadenamiento
    */
   update(data) {
+    const timezone = data.timezone || this.timezone;
+    
     if (data.title !== undefined) {
       this._validateTitle(data.title);
       this.title = data.title;
@@ -249,11 +296,21 @@ class Task {
     }
 
     if (data.dueDate !== undefined) {
-      this.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+      if (data.dueDate) {
+        this._validateDueDate(data.dueDate, timezone);
+        this.dueDate = new Date(data.dueDate);
+      } else {
+        this.dueDate = null;
+      }
+    }
+    
+    // Actualizar la zona horaria si se proporcionó
+    if (data.timezone) {
+      this.timezone = data.timezone;
     }
 
     this.updatedAt = new Date();
-    this.validate();
+    this.validate(timezone);
 
     return this;
   }

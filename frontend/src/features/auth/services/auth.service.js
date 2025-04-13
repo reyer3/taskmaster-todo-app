@@ -5,6 +5,7 @@
  * de autenticación de la API.
  */
 import api from '../../../services/api';
+//import apiClient from '../../../services/api-client';
 
 /**
  * Inicia sesión con credenciales
@@ -14,9 +15,16 @@ import api from '../../../services/api';
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const loginUser = async (email, password) => {
+  // Detectar la zona horaria del usuario
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
   try {
     console.log('Enviando solicitud de login al servidor...', { email });
-    const response = await api.post('/auth/login', { email, password });
+    const response = await apiClient.post('/auth/login', {
+      email,
+      password,
+      timezone // Enviar la zona horaria al backend
+    });
     console.log('Respuesta completa del servidor:', response);
     
     // Asegurar que la respuesta tenga la estructura esperada
@@ -75,8 +83,14 @@ export const loginUser = async (email, password) => {
  * @returns {Promise<Object>} Datos del usuario y token
  */
 export const registerUser = async (userData) => {
+  // Detectar la zona horaria del usuario
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
   try {
-    const response = await api.post('/auth/register', userData);
+    const response = await apiClient.post('/auth/register', {
+      ...userData,
+      timezone // Enviar la zona horaria al backend
+    });
     console.log('Respuesta de registro:', response);
     
     // Formato detectado: {status: 'success', data: {accessToken, user}, message: '...'}

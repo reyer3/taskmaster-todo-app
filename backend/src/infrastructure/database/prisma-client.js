@@ -20,34 +20,60 @@ if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL no está definida en las variables de entorno');
 }
 
-// Opción para prevenir conexiones reales a la DB durante las pruebas
+// Opciones para el cliente Prisma
 const prismaOptions = {
-  datasources: process.env.NODE_ENV === 'test' ? {} : {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  },
   // Configuración de logging
   log: process.env.NODE_ENV === 'development' 
     ? ['query', 'info', 'warn', 'error']
     : ['error'],
 };
 
+// Configuración específica para el entorno de prueba
+if (process.env.NODE_ENV === 'test') {
+  // Durante las pruebas, usar un cliente mock o configuraciones especiales si es necesario
+  // No configuramos datasources, porque se maneja a través de la variable DATABASE_URL
+}
+
 // Creación de una instancia única de PrismaClient
-const prisma = new PrismaClient(prismaOptions);
+let prisma;
+try {
+  prisma = new PrismaClient(prismaOptions);
+} catch (error) {
+  console.error('Error al inicializar Prisma:', error);
+  // Proporcionar un cliente mock o de fallback para pruebas si es necesario
+  if (process.env.NODE_ENV === 'test') {
+    // Proporcionar un cliente mock para tests
+    prisma = {};
+    console.warn('Usando cliente Prisma mock para pruebas');
+  } else {
+    throw error; // Re-lanzar el error en entornos que no sean de prueba
+  }
+}
 
 // Manejo de conexión y desconexión
 const connect = async () => {
+  if (!prisma.$connect) {
+    console.warn('Cliente Prisma no tiene método $connect, posiblemente usando mock');
+    return;
+  }
+  
   try {
     await prisma.$connect();
     console.log('Database connected successfully');
   } catch (error) {
     console.error('Failed to connect to database:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
   }
 };
 
 const disconnect = async () => {
+  if (!prisma.$disconnect) {
+    console.warn('Cliente Prisma no tiene método $disconnect, posiblemente usando mock');
+    return;
+  }
+  
   await prisma.$disconnect();
   console.log('Database disconnected');
 };

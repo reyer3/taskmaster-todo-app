@@ -132,17 +132,6 @@ const TaskForm = ({
       if (!(formData.dueDate instanceof Date) || isNaN(formData.dueDate.getTime())) {
         newErrors.dueDate = 'Fecha de vencimiento inválida';
       }
-      
-      // Verificar que la fecha no sea en el pasado
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const selectedDate = new Date(formData.dueDate);
-      selectedDate.setHours(0, 0, 0, 0);
-      
-      if (selectedDate < today) {
-        newErrors.dueDate = 'La fecha de vencimiento no puede ser en el pasado';
-      }
     }
     
     setErrors(newErrors);
@@ -159,25 +148,32 @@ const TaskForm = ({
         ...formData,
         // Convertir tags de string a array
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
+        // Incluir la zona horaria del usuario
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       };
       
-      // Ajustar la fecha de vencimiento si es la fecha actual
+      // Procesar la fecha de vencimiento
       if (formData.dueDate) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Inicio del día actual
-        
+        // Asegurar que todas las fechas se envíen en formato ISO
         const selectedDate = new Date(formData.dueDate);
-        selectedDate.setHours(0, 0, 0, 0); // Inicio del día seleccionado
         
-        // Si la fecha seleccionada es hoy, ajustar al final del día
-        if (selectedDate.getTime() === today.getTime()) {
-          const endOfDay = new Date(selectedDate);
-          endOfDay.setHours(23, 59, 59, 999); // Final del día
-          processedData.dueDate = endOfDay.toISOString();
+        // Para el día actual, establecer la hora al final del día
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const isToday = selectedDate.getDate() === today.getDate() &&
+                        selectedDate.getMonth() === today.getMonth() &&
+                        selectedDate.getFullYear() === today.getFullYear();
+        
+        if (isToday) {
+          // Si es hoy, establecer la hora al final del día
+          selectedDate.setHours(23, 59, 59, 999);
         } else {
-          // Asegurar que todas las fechas se envíen en formato ISO
-          processedData.dueDate = formData.dueDate.toISOString();
+          // Para otras fechas, mantener medianoche
+          selectedDate.setHours(0, 0, 0, 0);
         }
+        
+        processedData.dueDate = selectedDate.toISOString();
       }
       
       // Mantener ID solo si estamos editando

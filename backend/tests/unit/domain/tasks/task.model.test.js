@@ -59,6 +59,29 @@ describe('Task Model', () => {
       expect(task.dueDate).toEqual(dueDate);
     });
 
+    it('debería permitir crear una tarea con fecha de vencimiento para hoy', () => {
+      // Crear una fecha para hoy
+      const today = new Date();
+      
+      // Asegurarse de que solo usamos la fecha sin la hora (como en la validación real)
+      const todayWithoutTime = new Date(today.toISOString().split('T')[0]);
+      
+      // Datos de la tarea con la fecha de hoy
+      const taskData = {
+        id: 'task123',
+        title: 'Tarea para hoy',
+        userId: 'user123',
+        dueDate: todayWithoutTime
+      };
+      
+      // No debería lanzar error al crear la tarea
+      expect(() => new Task(taskData)).not.toThrow();
+      
+      // Crear la tarea y verificar que la fecha se estableció correctamente
+      const task = new Task(taskData);
+      expect(task.dueDate).toEqual(todayWithoutTime);
+    });
+
     it('debería validar que title no esté vacío', () => {
       // Datos con título vacío
       const taskData = {
@@ -155,6 +178,20 @@ describe('Task Model', () => {
         expect(() => task.updateDueDate('not-a-date')).toThrow('La fecha de vencimiento debe ser una fecha válida o null');
         // No debería cambiar
         expect(task.dueDate).toBeNull();
+      });
+
+      it('debería permitir establecer la fecha de vencimiento para el día actual', () => {
+        // Crear una fecha para hoy
+        const today = new Date();
+        
+        // Asegurarse de que solo usamos la fecha sin la hora (como en la validación real)
+        const todayWithoutTime = new Date(today.toISOString().split('T')[0]);
+        
+        // No debería lanzar error
+        expect(() => task.updateDueDate(todayWithoutTime)).not.toThrow();
+        
+        // Verificar que la fecha se estableció correctamente
+        expect(task.dueDate).toEqual(todayWithoutTime);
       });
     });
 
@@ -270,6 +307,28 @@ describe('Task Model', () => {
       // Verificar que es un objeto plano, no una instancia de Task
       expect(json).not.toBeInstanceOf(Task);
       expect(json.constructor).toBe(Object);
+    });
+
+    describe('Creación con fecha del día actual', () => {
+      it('debería permitir crear una tarea con fecha de vencimiento para hoy', () => {
+        // Crear una fecha para hoy
+        const today = new Date();
+        
+        // Crear datos de la tarea con la fecha de hoy
+        const taskData = {
+          id: 'task123',
+          title: 'Tarea para hoy',
+          userId: 'user123',
+          dueDate: today
+        };
+        
+        // No debería lanzar error al crear la tarea
+        expect(() => new Task(taskData)).not.toThrow();
+        
+        // Crear la tarea y verificar que la fecha se estableció correctamente
+        const task = new Task(taskData);
+        expect(task.dueDate).toEqual(today);
+      });
     });
   });
 });
