@@ -11,12 +11,15 @@ const mockPrismaTask = {
   delete: jest.fn(),
 };
 
-// Usar doMock en lugar de mock para evitar el hoisting
-jest.doMock('../../../../src/infrastructure/database/prisma-client', () => ({
-  prisma: {
-    task: mockPrismaTask
-  }
-}), {virtual: true});
+// Crear un mock del objeto prisma completo
+const mockPrisma = {
+  task: mockPrismaTask
+};
+
+// Usar mock en lugar de doMock
+jest.mock('../../../../src/infrastructure/database/prisma-client', () => ({
+  prisma: mockPrisma
+}));
 
 // Importar los módulos después de configurar los mocks
 const { TaskRepository } = require('../../../../src/infrastructure/repositories/task.repository');
@@ -31,6 +34,9 @@ describe('TaskRepository', () => {
     
     // Create a new repository instance for each test
     taskRepository = new TaskRepository();
+    
+    // Asignar explícitamente el mock de Prisma
+    taskRepository._prisma = mockPrisma;
   });
 
   describe('findAllByUserId', () => {

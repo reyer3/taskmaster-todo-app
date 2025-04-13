@@ -71,33 +71,36 @@ const validateLogin = (req) => {
  */
 router.post('/register', async (req, res, next) => {
   try {
-    // Validación robusta de entrada
-    validateRegistration(req);
-
-    const { email, password, name } = req.body;
-    const result = await authService.register({ email, password, name });
-
-    // Separar la respuesta de autenticación (tokens) de los datos de usuario
-    const { user, accessToken, refreshToken } = result;
-
-    // Establecer refreshToken como cookie HTTP-only para mayor seguridad
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-      sameSite: 'strict'
-    });
-
+    const { name, email, password, timezone } = req.body;
+    
+    // Verificar campos requeridos
+    if (!name) {
+      throw new ValidationError('Nombre es requerido');
+    }
+    
+    if (!email) {
+      throw new ValidationError('Email es requerido');
+    }
+    
+    if (!password) {
+      throw new ValidationError('Password es requerido');
+    }
+    
+    // Si se proporciona timezone, incluirla en los datos de registro
+    const userData = {
+      name,
+      email,
+      password,
+      ...(timezone && { timezone })
+    };
+    
+    const newUser = await authService.register(userData);
+    
     res.status(201).json({
       status: 'success',
-      data: {
-        user,
-        accessToken
-      },
-      message: 'Usuario registrado exitosamente'
+      data: newUser
     });
   } catch (error) {
-    // Usar el sistema centralizado de manejo de errores
     next(convertToAppError(error));
   }
 });
@@ -113,29 +116,33 @@ router.post('/register', async (req, res, next) => {
  */
 router.post('/login', async (req, res, next) => {
   try {
-    // Validación de datos de entrada
-    validateLogin(req);
-
-    const { email, password } = req.body;
-    const result = await authService.login(email, password);
-
-    const { user, accessToken, refreshToken } = result;
-
-    // Establecer refreshToken como cookie HTTP-only para mayor seguridad
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-      sameSite: 'strict'
-    });
-
+    const { email, password, timezone } = req.body;
+    
+    // Verificar campos requeridos
+    if (!email) {
+      throw new ValidationError('Email es requerido');
+    }
+    
+    if (!password) {
+      throw new ValidationError('Password es requerido');
+    }
+    
+    const userData = await authService.login(email, password);
+    
+    // Si se proporcionó zona horaria, la actualiza en la cuenta del usuario
+    if (timezone) {
+      try {
+        await authService.updateUser(userData.id, { timezone });
+        userData.timezone = timezone; // Actualizar en la respuesta
+      } catch (error) {
+        console.warn(`No se pudo actualizar la timezone del usuario: ${error.message}`);
+        // No fallamos el login si falla la actualización de timezone
+      }
+    }
+    
     res.json({
       status: 'success',
-      data: {
-        user,
-        accessToken
-      },
-      message: 'Inicio de sesión exitoso'
+      data: userData
     });
   } catch (error) {
     next(convertToAppError(error));
@@ -182,7 +189,7 @@ router.get('/me', authMiddleware, async (req, res, next) => {
 router.put('/me', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const { name, email } = req.body;
+    const { name, email, timezone } = req.body;
     const updates = {};
 
     if (name !== undefined) {
@@ -198,6 +205,21 @@ router.put('/me', authMiddleware, async (req, res, next) => {
         updates.email = email.trim().toLowerCase();
       } else if (email !== null) {
         throw new ValidationError('Email inválido');
+      }
+    }
+    
+    if (timezone !== undefined) {
+      // Validar formato de timezone (simplificado)
+      if (typeof timezone === 'string' && timezone.trim().length > 0) {
+        try {
+          // Validación básica: intenta convertir una fecha usando la zona horaria
+          new Date().toLocaleString('en-US', { timeZone: timezone.trim() });
+          updates.timezone = timezone.trim();
+        } catch (error) {
+          throw new ValidationError('Zona horaria inválida');
+        }
+      } else if (timezone !== null) {
+        throw new ValidationError('Zona horaria inválida');
       }
     }
 
